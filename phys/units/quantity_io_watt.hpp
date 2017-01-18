@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * watt, [W].
  */
 template<>
-struct unit_info< power_d >
+struct unit_info< decltype( watt.dimension() ) >
 {
    static bool        single() { return true; }
    static std::string name()   { return "watt"; }
@@ -33,7 +33,7 @@ struct unit_info< power_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( W, power_d )
+QUANTITY_DEFINE_LITERALS( W, watt )
 
 }
 }} // namespace phys::units

@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * lux, [lx].
  */
 template<>
-struct unit_info< illuminance_d >
+struct unit_info< decltype( lux.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "lux"; }
@@ -33,7 +33,7 @@ struct unit_info< illuminance_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( lx, illuminance_d )
+QUANTITY_DEFINE_LITERALS( lx, lux )
 
 }
 }} // namespace phys::units

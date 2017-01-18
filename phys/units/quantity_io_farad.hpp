@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * farad, [F].
  */
 template<>
-struct unit_info< capacitance_d >
+struct unit_info< decltype( farad.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "farad"; }
@@ -33,7 +33,7 @@ struct unit_info< capacitance_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( F, capacitance_d )
+QUANTITY_DEFINE_LITERALS( F, farad )
 
 }
 }} // namespace phys::units

@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * newton, [N].
  */
 template<>
-struct unit_info< force_d >
+struct unit_info< decltype( newton.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "newton"; }
@@ -33,7 +33,7 @@ struct unit_info< force_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( N, force_d )
+QUANTITY_DEFINE_LITERALS( N, newton )
 
 }
 }} // namespace phys::units

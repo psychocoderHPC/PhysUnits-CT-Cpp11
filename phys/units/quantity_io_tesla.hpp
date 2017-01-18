@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * tesla, [T].
  */
 template<>
-struct unit_info< magnetic_flux_density_d >
+struct unit_info< decltype( tesla.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "tesla"; }
@@ -33,7 +33,7 @@ struct unit_info< magnetic_flux_density_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( T, magnetic_flux_density_d )
+QUANTITY_DEFINE_LITERALS( T, tesla )
 
 }
 }} // namespace phys::units

@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * henry, [H].
  */
 template<>
-struct unit_info< inductance_d >
+struct unit_info< decltype( henry.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "henry"; }
@@ -33,7 +33,7 @@ struct unit_info< inductance_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( H, inductance_d )
+QUANTITY_DEFINE_LITERALS( H, henry )
 
 }
 }} // namespace phys::units

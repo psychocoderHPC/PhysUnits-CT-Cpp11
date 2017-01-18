@@ -23,7 +23,7 @@ namespace phys { namespace units {
 /// amount_of_substance_d
 
 template<>
-struct unit_info< amount_of_substance_d >
+struct unit_info< decltype( mole.dimension() ) >
 {
    static bool        single() { return true; }
    static std::string name()   { return "mole"; }

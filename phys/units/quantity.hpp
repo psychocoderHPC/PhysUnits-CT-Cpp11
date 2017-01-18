@@ -454,14 +454,16 @@ private:
 
 // Give names to the seven fundamental dimensions of physical reality.
 
-typedef dimensions< 1, 0, 0, 0, 0, 0, 0 > length_d;
-typedef dimensions< 0, 1, 0, 0, 0, 0, 0 > mass_d;
-typedef dimensions< 0, 0, 1, 0, 0, 0, 0 > time_interval_d;
-typedef dimensions< 0, 0, 0, 1, 0, 0, 0 > electric_current_d;
-typedef dimensions< 0, 0, 0, 0, 1, 0, 0 > thermodynamic_temperature_d;
-typedef dimensions< 0, 0, 0, 0, 0, 1, 0 > amount_of_substance_d;
-typedef dimensions< 0, 0, 0, 0, 0, 0, 1 > luminous_intensity_d;
-
+namespace si
+{
+    typedef dimensions< 1, 0, 0, 0, 0, 0, 0 > length;
+    typedef dimensions< 0, 1, 0, 0, 0, 0, 0 > mass;
+    typedef dimensions< 0, 0, 1, 0, 0, 0, 0 > time_interval;
+    typedef dimensions< 0, 0, 0, 1, 0, 0, 0 > electric_current;
+    typedef dimensions< 0, 0, 0, 0, 1, 0, 0 > thermodynamic_temperature;
+    typedef dimensions< 0, 0, 0, 0, 0, 1, 0 > amount_of_substance;
+    typedef dimensions< 0, 0, 0, 0, 0, 0, 1 > luminous_intensity;
+}
 // Addition operators
 
 /// quan += quan
@@ -730,13 +732,13 @@ inline constexpr X magnitude( quantity<DX,X> const & q ) { return q.magnitude();
 
 // The seven SI base units.  These tie our numbers to the real world.
 
-constexpr quantity<length_d                   > meter   { detail::magnitude_tag, 1.0 };
-constexpr quantity<mass_d                     > kilogram{ detail::magnitude_tag, 1.0 };
-constexpr quantity<time_interval_d            > second  { detail::magnitude_tag, 1.0 };
-constexpr quantity<electric_current_d         > ampere  { detail::magnitude_tag, 1.0 };
-constexpr quantity<thermodynamic_temperature_d> kelvin  { detail::magnitude_tag, 1.0 };
-constexpr quantity<amount_of_substance_d      > mole    { detail::magnitude_tag, 1.0 };
-constexpr quantity<luminous_intensity_d       > candela { detail::magnitude_tag, 1.0 };
+constexpr quantity<si::length                   > meter   { detail::magnitude_tag, 1.0 };
+constexpr quantity<si::mass                     > kilogram{ detail::magnitude_tag, 1.0 };
+constexpr quantity<si::time_interval            > second  { detail::magnitude_tag, 1.0 };
+constexpr quantity<si::electric_current         > ampere  { detail::magnitude_tag, 1.0 };
+constexpr quantity<si::thermodynamic_temperature> kelvin  { detail::magnitude_tag, 1.0 };
+constexpr quantity<si::amount_of_substance      > mole    { detail::magnitude_tag, 1.0 };
+constexpr quantity<si::luminous_intensity       > candela { detail::magnitude_tag, 1.0 };
 
 // The standard SI prefixes.
 
@@ -772,148 +774,80 @@ constexpr long double exbi = 1024 * pebi;
 constexpr long double zebi = 1024 * exbi;
 constexpr long double yobi = 1024 * zebi;
 
-// The rest of the standard dimensional types, as specified in SP811.
-
-using absorbed_dose_d             = dimensions< 2, 0, -2 >;
-using absorbed_dose_rate_d        = dimensions< 2, 0, -3 >;
-using acceleration_d              = dimensions< 1, 0, -2 >;
-using activity_of_a_nuclide_d     = dimensions< 0, 0, -1 >;
-using angular_velocity_d          = dimensions< 0, 0, -1 >;
-using angular_acceleration_d      = dimensions< 0, 0, -2 >;
-using area_d                      = dimensions< 2, 0, 0 >;
-using capacitance_d               = dimensions< -2, -1, 4, 2 >;
-using concentration_d             = dimensions< -3, 0, 0, 0, 0, 1 >;
-using current_density_d           = dimensions< -2, 0, 0, 1 >;
-using dose_equivalent_d           = dimensions< 2, 0, -2 >;
-using dynamic_viscosity_d         = dimensions< -1, 1, -1 >;
-using electric_charge_d           = dimensions< 0, 0, 1, 1 >;
-using electric_charge_density_d   = dimensions< -3, 0, 1, 1 >;
-using electric_conductance_d      = dimensions< -2, -1, 3, 2 >;
-using electric_field_strenth_d    = dimensions< 1, 1, -3, -1 >;
-using electric_flux_density_d     = dimensions< -2, 0, 1, 1 >;
-using electric_potential_d        = dimensions< 2, 1, -3, -1 >;
-using electric_resistance_d       = dimensions< 2, 1, -3, -2 >;
-using energy_d                    = dimensions< 2, 1, -2 >;
-using energy_density_d            = dimensions< -1, 1, -2 >;
-using exposure_d                  = dimensions< 0, -1, 1, 1 >;
-using force_d                     = dimensions< 1, 1, -2 >;
-using frequency_d                 = dimensions< 0, 0, -1 >;
-using heat_capacity_d             = dimensions< 2, 1, -2, 0, -1 >;
-using heat_density_d              = dimensions< 0, 1, -2 >;
-using heat_density_flow_rate_d    = dimensions< 0, 1, -3 >;
-using heat_flow_rate_d            = dimensions< 2, 1, -3 >;
-using heat_flux_density_d         = dimensions< 0, 1, -3 >;
-using heat_transfer_coefficient_d = dimensions< 0, 1, -3, 0, -1 >;
-using illuminance_d               = dimensions< -2, 0, 0, 0, 0, 0, 1 >;
-using inductance_d                = dimensions< 2, 1, -2, -2 >;
-using irradiance_d                = dimensions< 0, 1, -3 >;
-using kinematic_viscosity_d       = dimensions< 2, 0, -1 >;
-using luminance_d                 = dimensions< -2, 0, 0, 0, 0, 0, 1 >;
-using luminous_flux_d             = dimensions< 0, 0, 0, 0, 0, 0, 1 >;
-using magnetic_field_strength_d   = dimensions< -1, 0, 0, 1 >;
-using magnetic_flux_d             = dimensions< 2, 1, -2, -1 >;
-using magnetic_flux_density_d     = dimensions< 0, 1, -2, -1 >;
-using magnetic_permeability_d     = dimensions< 1, 1, -2, -2 >;
-using mass_density_d              = dimensions< -3, 1, 0 >;
-using mass_flow_rate_d            = dimensions< 0, 1, -1 >;
-using molar_energy_d              = dimensions< 2, 1, -2, 0, 0, -1 >;
-using molar_entropy_d             = dimensions< 2, 1, -2, -1, 0, -1 >;
-using moment_of_force_d           = dimensions< 2, 1, -2 >;
-using permittivity_d              = dimensions< -3, -1, 4, 2 >;
-using power_d                     = dimensions< 2, 1, -3 >;
-using pressure_d                  = dimensions< -1, 1, -2 >;
-using radiance_d                  = dimensions< 0, 1, -3 >;
-using radiant_intensity_d         = dimensions< 2, 1, -3 >;
-using speed_d                     = dimensions< 1, 0, -1 >;
-using specific_energy_d           = dimensions< 2, 0, -2 >;
-using specific_heat_capacity_d    = dimensions< 2, 0, -2, 0, -1 >;
-using specific_volume_d           = dimensions< 3, -1, 0 >;
-using substance_permeability_d    = dimensions< -1, 0, 1 >;
-using surface_tension_d           = dimensions< 0, 1, -2 >;
-using thermal_conductivity_d      = dimensions< 1, 1, -3, 0, -1 >;
-using thermal_diffusivity_d       = dimensions< 2, 0, -1 >;
-using thermal_insulance_d         = dimensions< 0, -1, 3, 0, 1 >;
-using thermal_resistance_d        = dimensions< -2, -1, 3, 0, 1 >;
-using thermal_resistivity_d       = dimensions< -1, -1, 3, 0, 1 >;
-using torque_d                    = dimensions< 2, 1, -2 >;
-using volume_d                    = dimensions< 3, 0, 0 >;
-using volume_flow_rate_d          = dimensions< 3, 0, -1 >;
-using wave_number_d               = dimensions< -1, 0, 0 >;
-
 // Handy values.
 
 constexpr Rep pi      { Rep( 3.141592653589793238462L ) };
 constexpr Rep percent { Rep( 1 ) / 100 };
 
 //// Not approved for use alone, but needed for use with prefixes.
-constexpr quantity< mass_d                  > gram         { kilogram / 1000 };
+constexpr auto gram         { kilogram / 1000 };
 
 // The derived SI units, as specified in SP811.
 
-constexpr Rep                                 radian       { Rep( 1 ) };
-constexpr Rep                                 steradian    { Rep( 1 ) };
-constexpr quantity< force_d                 > newton       { meter * kilogram / square( second ) };
-constexpr quantity< pressure_d              > pascal       { newton / square( meter ) };
-constexpr quantity< energy_d                > joule        { newton * meter };
-constexpr quantity< power_d                 > watt         { joule / second };
-constexpr quantity< electric_charge_d       > coulomb      { second * ampere };
-constexpr quantity< electric_potential_d    > volt         { watt / ampere };
-constexpr quantity< capacitance_d           > farad        { coulomb / volt };
-constexpr quantity< electric_resistance_d   > ohm          { volt / ampere };
-constexpr quantity< electric_conductance_d  > siemens      { ampere / volt };
-constexpr quantity< magnetic_flux_d         > weber        { volt * second };
-constexpr quantity< magnetic_flux_density_d > tesla        { weber / square( meter ) };
-constexpr quantity< inductance_d            > henry        { weber / ampere };
-constexpr quantity< thermodynamic_temperature_d > degree_celsius   { kelvin };
-constexpr quantity< luminous_flux_d         > lumen        { candela * steradian };
-constexpr quantity< illuminance_d           > lux          { lumen / meter / meter };
-constexpr quantity< activity_of_a_nuclide_d > becquerel    { 1 / second };
-constexpr quantity< absorbed_dose_d         > gray         { joule / kilogram };
-constexpr quantity< dose_equivalent_d       > sievert      { joule / kilogram };
-constexpr quantity< frequency_d             > hertz        { 1 / second };
+constexpr Rep  radian       { Rep( 1 ) };
+constexpr Rep  steradian    { Rep( 1 ) };
+constexpr auto newton       { meter * kilogram / square( second ) };
+constexpr auto pascal       { newton / square( meter ) };
+constexpr auto joule        { newton * meter };
+constexpr auto watt         { joule / second };
+constexpr auto coulomb      { second * ampere };
+constexpr auto volt         { watt / ampere };
+constexpr auto farad        { coulomb / volt };
+constexpr auto ohm          { volt / ampere };
+constexpr auto siemens      { ampere / volt };
+constexpr auto weber        { volt * second };
+constexpr auto tesla        { weber / square( meter ) };
+constexpr auto henry        { weber / ampere };
+constexpr auto degree_celsius   { kelvin };
+constexpr auto lumen        { candela * steradian };
+constexpr auto lux          { lumen / meter / meter };
+constexpr auto becquerel    { 1 / second };
+constexpr auto gray         { joule / kilogram };
+constexpr auto sievert      { joule / kilogram };
+constexpr auto hertz        { 1 / second };
 
 // The rest of the units approved for use with SI, as specified in SP811.
 // (However, use of these units is generally discouraged.)
 
-constexpr quantity< length_d                > angstrom     { Rep( 1e-10L ) * meter };
-constexpr quantity< area_d                  > are          { Rep( 1e+2L ) * square( meter ) };
-constexpr quantity< pressure_d              > bar          { Rep( 1e+5L ) * pascal };
-constexpr quantity< area_d                  > barn         { Rep( 1e-28L ) * square( meter ) };
-constexpr quantity< activity_of_a_nuclide_d > curie        { Rep( 3.7e+10L ) * becquerel };
-constexpr quantity< time_interval_d         > day          { Rep( 86400L ) * second };
-constexpr Rep                                 degree_angle { pi / 180 };
-constexpr quantity< acceleration_d          > gal          { Rep( 1e-2L ) * meter / square( second ) };
-constexpr quantity< area_d                  > hectare      { Rep( 1e+4L ) * square( meter ) };
-constexpr quantity< time_interval_d         > hour         { Rep( 3600 ) * second };
-constexpr quantity< speed_d                 > knot         { Rep( 1852 ) / 3600 * meter / second };
-constexpr quantity< volume_d                > liter        { Rep( 1e-3L ) * cube( meter ) };
-constexpr quantity< time_interval_d         > minute       { Rep( 60 ) * second };
-constexpr Rep                                 minute_angle { pi / 10800 };
-constexpr quantity< length_d                > mile_nautical{ Rep( 1852 ) * meter };
-constexpr quantity< absorbed_dose_d         > rad          { Rep( 1e-2L ) * gray };
-constexpr quantity< dose_equivalent_d       > rem          { Rep( 1e-2L ) * sievert };
-constexpr quantity< exposure_d              > roentgen     { Rep( 2.58e-4L ) * coulomb / kilogram };
-constexpr Rep                                 second_angle { pi / 648000L };
-constexpr quantity< mass_d                  > ton_metric   { Rep( 1e+3L ) * kilogram };
+constexpr auto angstrom     { Rep( 1e-10L ) * meter };
+constexpr auto are          { Rep( 1e+2L ) * square( meter ) };
+constexpr auto bar          { Rep( 1e+5L ) * pascal };
+constexpr auto barn         { Rep( 1e-28L ) * square( meter ) };
+constexpr auto curie        { Rep( 3.7e+10L ) * becquerel };
+constexpr auto day          { Rep( 86400L ) * second };
+constexpr Rep  degree_angle { pi / 180 };
+constexpr auto gal          { Rep( 1e-2L ) * meter / square( second ) };
+constexpr auto hectare      { Rep( 1e+4L ) * square( meter ) };
+constexpr auto hour         { Rep( 3600 ) * second };
+constexpr auto knot         { Rep( 1852 ) / 3600 * meter / second };
+constexpr auto liter        { Rep( 1e-3L ) * cube( meter ) };
+constexpr auto minute       { Rep( 60 ) * second };
+constexpr Rep  minute_angle { pi / 10800 };
+constexpr auto mile_nautical{ Rep( 1852 ) * meter };
+constexpr auto rad          { Rep( 1e-2L ) * gray };
+constexpr auto rem          { Rep( 1e-2L ) * sievert };
+constexpr auto roentgen     { Rep( 2.58e-4L ) * coulomb / kilogram };
+constexpr Rep  second_angle { pi / 648000L };
+constexpr auto ton_metric   { Rep( 1e+3L ) * kilogram };
 
 // Alternate (non-US) spellings:
 
-constexpr quantity< length_d                > metre        { meter };
-constexpr quantity< volume_d                > litre        { liter };
-constexpr Rep                                 deca         { deka };
-constexpr quantity< mass_d                  > tonne        { ton_metric };
+constexpr auto metre        { meter };
+constexpr auto litre        { liter };
+constexpr Rep  deca         { deka };
+constexpr auto tonne        { ton_metric };
 
 // cooked literals for base units;
 // these could also have been created with a script.
 
 #define QUANTITY_DEFINE_SCALING_LITERAL( sfx, dim, factor ) \
-    constexpr quantity<dim, long double> operator "" _ ## sfx(unsigned long long x) \
+    constexpr quantity<decltype(dim.dimension()), long double> operator "" _ ## sfx(unsigned long long x) \
     { \
-        return quantity<dim, long double>( detail::magnitude_tag, factor * x ); \
+        return quantity<decltype(dim.dimension()), long double>( detail::magnitude_tag, factor * x ); \
     } \
-    constexpr quantity<dim, long double> operator "" _ ## sfx(long double x) \
+    constexpr quantity<decltype(dim.dimension()), long double> operator "" _ ## sfx(long double x) \
     { \
-        return quantity<dim, long double>( detail::magnitude_tag, factor * x ); \
+        return quantity<decltype(dim.dimension()), long double>( detail::magnitude_tag, factor * x ); \
     }
 
 #define QUANTITY_DEFINE_SCALING_LITERALS( pfx, dim, fact ) \
@@ -947,14 +881,14 @@ constexpr quantity< mass_d                  > tonne        { ton_metric };
 
 namespace literals {
 
-QUANTITY_DEFINE_SCALING_LITERALS( g, mass_d, 1e-3 )
+QUANTITY_DEFINE_SCALING_LITERALS( g, kilogram, 1e-3 )
 
-QUANTITY_DEFINE_LITERALS( m  , length_d )
-QUANTITY_DEFINE_LITERALS( s  , time_interval_d )
-QUANTITY_DEFINE_LITERALS( A  , electric_current_d )
-QUANTITY_DEFINE_LITERALS( K  , thermodynamic_temperature_d )
-QUANTITY_DEFINE_LITERALS( mol, amount_of_substance_d )
-QUANTITY_DEFINE_LITERALS( cd , luminous_intensity_d )
+QUANTITY_DEFINE_LITERALS( m  , meter )
+QUANTITY_DEFINE_LITERALS( s  , second )
+QUANTITY_DEFINE_LITERALS( A  , ampere )
+QUANTITY_DEFINE_LITERALS( K  , kelvin )
+QUANTITY_DEFINE_LITERALS( mol, mole )
+QUANTITY_DEFINE_LITERALS( cd , candela )
 
 } // namespace literals
 

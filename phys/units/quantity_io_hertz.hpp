@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * hertz, [Hz].
  */
 template<>
-struct unit_info< frequency_d >
+struct unit_info< decltype( hertz.dimension() ) >
 {
    static bool        single() { return true; }
    static std::string name()   { return "hertz"; }
@@ -33,7 +33,7 @@ struct unit_info< frequency_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( Hz, frequency_d )
+QUANTITY_DEFINE_LITERALS( Hz, hertz )
 
 }
 }} // namespace phys::units

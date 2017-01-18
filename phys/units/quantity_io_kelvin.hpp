@@ -23,7 +23,7 @@ namespace phys { namespace units {
 /// kelvin, [K].
 
 template<>
-struct unit_info< thermodynamic_temperature_d >
+struct unit_info< decltype( kelvin.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "kelvin"; }

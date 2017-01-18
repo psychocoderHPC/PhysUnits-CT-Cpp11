@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * ohm, [Ohm].
  */
 template<>
-struct unit_info< electric_resistance_d >
+struct unit_info< decltype( ohm.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "ohm"; }
@@ -33,7 +33,7 @@ struct unit_info< electric_resistance_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( Ohm, electric_resistance_d )
+QUANTITY_DEFINE_LITERALS( Ohm, ohm )
 
 }
 }} // namespace phys::units

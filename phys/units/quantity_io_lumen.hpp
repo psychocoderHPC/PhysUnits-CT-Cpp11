@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * lumen, [lm].
  */
 template<>
-struct unit_info< luminous_flux_d >
+struct unit_info< decltype( lumen.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "lumen"; }
@@ -33,7 +33,7 @@ struct unit_info< luminous_flux_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( lm, luminous_flux_d )
+QUANTITY_DEFINE_LITERALS( lm, lumen )
 
 }
 }} // namespace phys::units

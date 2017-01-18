@@ -23,7 +23,7 @@ namespace phys { namespace units {
 /// luminous_intensity_d
 
 template<>
-struct unit_info< luminous_intensity_d >
+struct unit_info< decltype( candela.dimension() ) >
 {
    static bool        single() { return true; }
    static std::string name()   { return "candela"; }

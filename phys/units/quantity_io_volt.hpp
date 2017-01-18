@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * volt, [V].
  */
 template<>
-struct unit_info< electric_potential_d >
+struct unit_info< decltype( volt.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "volt"; }
@@ -33,7 +33,7 @@ struct unit_info< electric_potential_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( V, electric_potential_d )
+QUANTITY_DEFINE_LITERALS( V, volt )
 
 }
 }} // namespace phys::units

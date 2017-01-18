@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * gray, [Gy].
  */
 template<>
-struct unit_info< absorbed_dose_d >
+struct unit_info< decltype( gray.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "gray"; }
@@ -33,7 +33,7 @@ struct unit_info< absorbed_dose_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( Gy, absorbed_dose_d )
+QUANTITY_DEFINE_LITERALS( Gy, gray )
 
 }
 }} // namespace phys::units

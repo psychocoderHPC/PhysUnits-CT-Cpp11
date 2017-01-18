@@ -23,7 +23,7 @@ namespace phys { namespace units {
 /// meter_d
 
 template<>
-struct unit_info< length_d >
+struct unit_info< decltype( meter.dimension() ) >
 {
    static bool        single() { return true; }
    static std::string name()   { return "meter"; }

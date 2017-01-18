@@ -22,7 +22,7 @@ namespace phys { namespace units {
 
 #if 0
 template<>
-struct unit_info< radian_d >
+struct unit_info< decltype( radian.dimension() ) >
 {
     static std::string name()   { return "radian"; }
     static std::string symbol() { return "rad"; }

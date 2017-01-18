@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * weber, [Wb].
  */
 template<>
-struct unit_info< magnetic_flux_d >
+struct unit_info< decltype( weber.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "weber"; }
@@ -33,7 +33,7 @@ struct unit_info< magnetic_flux_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( Wb, magnetic_flux_d )
+QUANTITY_DEFINE_LITERALS( Wb, weber )
 
 }
 }} // namespace phys::units

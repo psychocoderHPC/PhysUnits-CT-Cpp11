@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * pascal, [Pa].
  */
 template<>
-struct unit_info< pressure_d >
+struct unit_info< decltype( pascal.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "pascal"; }
@@ -33,7 +33,7 @@ struct unit_info< pressure_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( Pa, pressure_d )
+QUANTITY_DEFINE_LITERALS( Pa, pascal )
 
 }
 }} // namespace phys::units

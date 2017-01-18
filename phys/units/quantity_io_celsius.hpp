@@ -22,19 +22,19 @@
 namespace phys { namespace units {
 
 /**
- * celsius, [°C].
+ * celsius, [ï¿½C].
  */
 template<>
-struct unit_info< thermodynamic_temperature_d >
+struct unit_info< decltype( coulomb.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "celsius"; }
-    static std::string symbol() { return "°C"; }
+    static std::string symbol() { return "Â°C"; }
 };
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( oC, thermodynamic_temperature_d )
+QUANTITY_DEFINE_LITERALS( oC, coulomb )
 
 }
 }} // namespace phys::units

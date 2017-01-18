@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * siemens, [S].
  */
 template<>
-struct unit_info< electric_conductance_d >
+struct unit_info< decltype( siemens.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "siemens"; }
@@ -33,7 +33,7 @@ struct unit_info< electric_conductance_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( S, electric_conductance_d )
+QUANTITY_DEFINE_LITERALS( S, siemens )
 
 }
 }} // namespace phys::units

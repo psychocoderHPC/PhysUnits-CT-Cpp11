@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * sievert, [Sv].
  */
 template<>
-struct unit_info< dose_equivalent_d >
+struct unit_info< decltype( sievert.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "sievert"; }
@@ -33,7 +33,7 @@ struct unit_info< dose_equivalent_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( Sv, dose_equivalent_d )
+QUANTITY_DEFINE_LITERALS( Sv, sievert )
 
 }
 }} // namespace phys::units

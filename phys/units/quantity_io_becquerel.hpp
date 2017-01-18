@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * becquerel, [Bq].
  */
 template<>
-struct unit_info< activity_of_a_nuclide_d >
+struct unit_info< decltype( becquerel.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "becquerel"; }
@@ -33,7 +33,7 @@ struct unit_info< activity_of_a_nuclide_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( Bq, activity_of_a_nuclide_d )
+QUANTITY_DEFINE_LITERALS( Bq, becquerel )
 
 }
 }} // namespace phys::units

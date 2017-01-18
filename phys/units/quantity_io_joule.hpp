@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * joule, [J].
  */
 template<>
-struct unit_info< energy_d >
+struct unit_info< decltype( joule.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "joule"; }
@@ -33,7 +33,7 @@ struct unit_info< energy_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( J, energy_d )
+QUANTITY_DEFINE_LITERALS( J, joule )
 
 }
 }} // namespace phys::units

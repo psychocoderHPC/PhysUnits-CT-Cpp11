@@ -23,7 +23,7 @@ namespace phys { namespace units {
 /// electric_current_d
 
 template<>
-struct unit_info< electric_current_d >
+struct unit_info< decltype( ampere.dimension() ) >
 {
    static bool        single() { return true; }
    static std::string name()   { return "ampere"; }

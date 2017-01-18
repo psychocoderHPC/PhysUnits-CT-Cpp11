@@ -23,7 +23,7 @@ namespace phys { namespace units {
 /// time_interval_d
 
 template<>
-struct unit_info< time_interval_d >
+struct unit_info< decltype( second.dimension() ) >
 {
    static bool        single() { return true; }
    static std::string name()   { return "second"; }

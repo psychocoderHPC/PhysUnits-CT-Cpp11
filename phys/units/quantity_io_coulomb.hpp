@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * coulomb, [C].
  */
 template<>
-struct unit_info< electric_charge_d >
+struct unit_info< decltype( coulomb.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "coulomb"; }
@@ -33,7 +33,7 @@ struct unit_info< electric_charge_d >
 
 namespace literals {
 
-QUANTITY_DEFINE_LITERALS( C, electric_charge_d )
+QUANTITY_DEFINE_LITERALS( C, coulomb )
 
 }
 }} // namespace phys::units

@@ -24,7 +24,7 @@ namespace phys { namespace units {
  * meter per second, [m/s].
  */
 template<>
-struct unit_info< speed_d >
+struct unit_info< decltype( knot.dimension() ) >
 {
     static bool        single() { return true; }
     static std::string name()   { return "Meter per second"; }

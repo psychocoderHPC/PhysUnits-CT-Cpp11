@@ -22,7 +22,7 @@ namespace phys { namespace units {
 
 #if 0
 template<>
-struct unit_info< steradian_d >
+struct unit_info< decltype( steradian.dimension() ) >
 {
     static std::string name()   { return "steradian"; }
     static std::string symbol() { return "sr"; }
