@@ -44,13 +44,19 @@ int main()
 
     constexpr auto wavelength = 800*nano*meter;
 
+    const auto xyz = 100 * meter/second;
+    const auto z = xyz *10 / meter;
+
+    std::cout<< "size=" << sizeof(decltype(z)) << "byte value="<< z<< std::endl;
+
+
     constexpr auto y = Test::mySpeed;
     std::cout<<"test="<<y<<std::endl;
 
     constexpr auto g = 10._g * newton * meter;
    //g.to(unit_time).to(unit_time).to(unit_length)
     //static_assert( std::get<2>(g.dimension()) == -2, "nonono");
-    std::cout<<typeid(g.to(pic::meter)).name()<<" ---gg="<<g<<std::endl;
+    std::cout<<"g="<<g<< " g-1="<<pow(g,3)<<std::endl;
 
     constexpr auto xx = speed.to( unit_speed )*unit_speed;
     //constexpr auto yy = square( xx );

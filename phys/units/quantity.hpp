@@ -134,6 +134,12 @@ struct dimension
     }
 
     constexpr dimension
+    operator*( const exp_type rhs ) const
+    {
+        return { m_symbol, m_exp * rhs };
+    }
+
+    constexpr dimension
     operator/( const dimension rhs ) const
     {
         return { m_symbol, m_exp / rhs.m_exp };
@@ -149,6 +155,7 @@ struct dimensions : public T_Tuple
         0,
         T_Tuple
     >::type;
+    using exp_type = typename dim_type::exp_type;
 
     constexpr dimensions(
         const T_Tuple dims
@@ -261,11 +268,90 @@ struct dimensions : public T_Tuple
         };
     }
 
+    constexpr dimensions operator*( const exp_type rhs ) const
+    {
+        return T_Tuple{
+            std::get< 0 >( *this ) * rhs,
+            std::get< 1 >( *this ) * rhs,
+            std::get< 2 >( *this ) * rhs,
+            std::get< 3 >( *this ) * rhs,
+            std::get< 4 >( *this ) * rhs,
+            std::get< 5 >( *this ) * rhs,
+            std::get< 6 >( *this ) * rhs
+        };
+    }
+
+
+    constexpr dimensions operator/( const dimensions rhs ) const
+    {
+        return T_Tuple{
+            std::get< 0 >( *this ) / std::get< 0 >( rhs ),
+            std::get< 1 >( *this ) / std::get< 1 >( rhs ),
+            std::get< 2 >( *this ) / std::get< 2 >( rhs ),
+            std::get< 3 >( *this ) / std::get< 3 >( rhs ),
+            std::get< 4 >( *this ) / std::get< 4 >( rhs ),
+            std::get< 5 >( *this ) / std::get< 5 >( rhs ),
+            std::get< 6 >( *this ) / std::get< 6 >( rhs )
+        };
+    }
+
+    constexpr dimensions operator/( const dim_type rhs ) const
+    {
+        return T_Tuple{
+            std::get< 0 >( *this ) / rhs,
+            std::get< 1 >( *this ) / rhs,
+            std::get< 2 >( *this ) / rhs,
+            std::get< 3 >( *this ) / rhs,
+            std::get< 4 >( *this ) / rhs,
+            std::get< 5 >( *this ) / rhs,
+            std::get< 6 >( *this ) / rhs
+        };
+    }
+
+    friend constexpr dimensions operator/( const dim_type rhs, const dimensions );
+
+    friend constexpr dimensions operator*( const dim_type rhs, const dimensions );
+
+
     constexpr bool operator!=( const dim_type rhs ) const
     {
         return !( *this == rhs );
     }
 };
+
+template<
+    typename T_Tuple
+>
+constexpr dimensions<T_Tuple> operator/( const typename dimensions<T_Tuple>::dim_type rhs, const dimensions<T_Tuple> dim )
+{
+    using dim_type = typename dimensions<T_Tuple>::dim_type;
+    return T_Tuple{
+        rhs / std::get< 0 >( dim ),
+        rhs / std::get< 1 >( dim ),
+        rhs / std::get< 2 >( dim ),
+        rhs / std::get< 3 >( dim ),
+        rhs / std::get< 4 >( dim ),
+        rhs / std::get< 5 >( dim ),
+        rhs / std::get< 6 >( dim )
+    };
+}
+
+template<
+    typename T_Tuple
+>
+constexpr dimensions<T_Tuple> operator*( const typename dimensions<T_Tuple>::dim_type rhs, const dimensions<T_Tuple> dim )
+{
+    using dim_type = typename dimensions<T_Tuple>::dim_type;
+    return T_Tuple{
+        rhs * std::get< 0 >( dim ),
+        rhs * std::get< 1 >( dim ),
+        rhs * std::get< 2 >( dim ),
+        rhs * std::get< 3 >( dim ),
+        rhs * std::get< 4 >( dim ),
+        rhs * std::get< 5 >( dim ),
+        rhs * std::get< 6 >( dim )
+    };
+}
 
 template< typename... T >
 constexpr auto
@@ -616,6 +702,13 @@ public:
             typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
         >;
 
+    template <typename D, typename X, typename Y>
+    friend constexpr auto
+    pow( quantity<D, X> const & x, const Y & y ) ->
+        quantity<
+            D,
+            typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+        >;
 
     // absolute value.
 #if 0
@@ -720,6 +813,24 @@ cube( quantity<D, X> const & x )
 }
 
 
+namespace detail
+{
+    template< typename T_Type, typename T >
+    constexpr T_Type pow( T_Type const x , T const exp, const T_Type result = T_Type( 1 ) )
+    {
+        return exp == 0 ? result : (
+            exp == 1 ? x * result : detail::pow( x, exp - 1, result * x )
+        );
+    }
+} // namespace details
+
+
+template< typename T_Type, typename T >
+constexpr T_Type pow( T_Type const x , T const exp )
+{
+    return detail::pow( x, exp );
+}
+
 template <typename D, typename X, typename Y>
 constexpr auto
 operator*( const Y & y, quantity<D, X> const & x )
@@ -728,7 +839,10 @@ operator*( const Y & y, quantity<D, X> const & x )
     typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
 >
 {
-    return quantity<D,X>( y * x.m_value, x.m_dim );
+    return quantity<
+        D,
+        typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+    >( y * x.m_value, x.m_dim );
 }
 
 template <typename D, typename X, typename Y>
@@ -739,7 +853,10 @@ operator*( quantity<D, X> const & x, const Y & y )
     typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
 >
 {
-    return quantity<D,X>( y * x.m_value, x.m_dim );
+    return quantity<
+        D,
+        typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+    >( y * x.m_value, x.m_dim );
 }
 
 template <typename D, typename X, typename Y>
@@ -761,7 +878,27 @@ operator/( quantity<D, X> const & x, const Y & y )
     typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
 >
 {
-    return quantity<D,X>( x.m_value / y, x.m_dim );
+    return quantity<
+        D,
+        typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+    >( x.m_value / y, x.m_dim );
+}
+
+template <typename D, typename X, typename Y>
+constexpr auto
+pow( quantity<D, X> const & x, const Y & exp ) ->
+    quantity<
+        D,
+        typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+    >
+{
+    return quantity<
+        D,
+        typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+    >{
+        pow(x.m_value, exp),
+        x.m_dim * exp
+    };
 }
 
 #if 0
