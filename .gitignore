@@ -21,3 +21,7 @@
 
 # Compiled help files
 *.chm
+
+# netbeans project files
+/nbproject/
+

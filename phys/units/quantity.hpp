@@ -32,6 +32,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <utility>  // std::declval
+#include <array>
+#include <tuple>
+#include <type_traits>
 
 /// namespace phys.
 
@@ -45,6 +48,7 @@ namespace units {
    using Rep = PHYS_UNITS_REP_TYPE;
 #else
    using Rep = double;
+   using DimType = int;
 #endif
 
 /*
@@ -53,49 +57,229 @@ namespace units {
 template< typename Dims, typename T = Rep >
 class quantity;
 
+
+struct const_string {
+    char const* str;
+    std::size_t size;
+
+    template <std::size_t N>
+    constexpr const_string(char const (&s)[N])
+        : str(s)
+        , size(N - 1)
+    {}
+
+    std::string name( ) const
+    {
+        return str;
+    }
+
+};
+
+
 /**
  * We could drag dimensions around individually, but it's much more convenient to package them.
  */
-template< int D1, int D2, int D3, int D4 = 0, int D5 = 0, int D6 = 0, int D7 = 0 >
-struct dimensions
+template< typename T_ExpType >
+struct dimension
 {
-    enum
+
+    using exp_type = T_ExpType;
+
+    const const_string m_symbol;
+    const exp_type m_exp;
+
+
+
+    constexpr dimension(
+        const const_string symbol,
+        const exp_type dim
+    ) :
+        m_symbol( symbol ),
+        m_exp( dim )
     {
-        dim1 = D1,
-        dim2 = D2,
-        dim3 = D3,
-        dim4 = D4,
-        dim5 = D5,
-        dim6 = D6,
-        dim7 = D7,
 
-        is_all_zero =
-            D1 == 0 && D2 == 0 && D3 == 0 && D4 == 0 && D5 == 0 && D6 == 0 && D7 == 0,
-
-        is_base =
-            1 == (D1 != 0) + (D2 != 0) + (D3 != 0) + (D4 != 0) + (D5 != 0) + (D6 != 0) + (D7 != 0)  &&
-            1 ==  D1 + D2 + D3 + D4 + D5 + D6 + D7,
-    };
-
-    template< int R1, int R2, int R3, int R4, int R5, int R6, int R7 >
-    constexpr bool operator==( dimensions<R1, R2, R3, R4, R5, R6, R7> const & ) const
-    {
-        return D1==R1 && D2==R2 && D3==R3 && D4==R4 && D5==R5 && D6==R6 && D7==R7;
     }
 
-    template< int R1, int R2, int R3, int R4, int R5, int R6, int R7 >
-    constexpr bool operator!=( dimensions<R1, R2, R3, R4, R5, R6, R7> const & rhs ) const
+    constexpr dimension zero() const
+    {
+        return dimension( m_symbol, 0 );
+    }
+
+    constexpr dimension inverse() const
+    {
+        return dimension( m_symbol, -1 * m_exp );
+    }
+
+    constexpr operator exp_type() const
+    {
+        return m_exp;
+    }
+
+    constexpr dimension
+    operator+( const dimension rhs ) const
+    {
+        return { m_symbol, m_exp + rhs.m_exp };
+    }
+
+    constexpr dimension
+    operator-( const dimension rhs ) const
+    {
+        return { m_symbol, m_exp - rhs.m_exp };
+    }
+
+    constexpr dimension
+    operator*( const dimension rhs ) const
+    {
+        return { m_symbol, m_exp * rhs.m_exp };
+    }
+
+    constexpr dimension
+    operator/( const dimension rhs ) const
+    {
+        return { m_symbol, m_exp / rhs.m_exp };
+    }
+};
+
+template<
+    typename T_Tuple
+>
+struct dimensions : public T_Tuple
+{
+    using dim_type = typename std::tuple_element<
+        0,
+        T_Tuple
+    >::type;
+
+    constexpr dimensions(
+        const T_Tuple dims
+    ) :
+        T_Tuple{ dims }
+    {
+
+    }
+
+    constexpr bool
+    is_all_zero() const
+    {
+        return std::get< 0 >( *this ) == dim_type( 0 )  &&
+            std::get< 1 >( *this ) == dim_type( 0 ) &&
+            std::get< 2 >( *this ) == dim_type( 0 ) &&
+            std::get< 3 >( *this ) == dim_type( 0 ) &&
+            std::get< 4 >( *this ) == dim_type( 0 ) &&
+            std::get< 5 >( *this ) == dim_type( 0 ) &&
+            std::get< 6 >( *this ) == dim_type( 0 );
+    }
+
+    constexpr bool
+    is_base() const
+    {
+        return ( dim_type( 1 ) ==
+            (
+                std::get< 0 >( *this ) != dim_type( 0 ) +
+                std::get< 1 >( *this ) != dim_type( 0 ) +
+                std::get< 2 >( *this ) != dim_type( 0 ) +
+                std::get< 3 >( *this ) != dim_type( 0 ) +
+                std::get< 4 >( *this ) != dim_type( 0 ) +
+                std::get< 5 >( *this ) != dim_type( 0 ) +
+                std::get< 6 >( *this ) != dim_type( 0 )
+            )
+        )
+        &&
+        ( dim_type( 1 ) ==
+            (
+                std::get< 0 >( *this ) +
+                std::get< 1 >( *this ) +
+                std::get< 2 >( *this ) +
+                std::get< 3 >( *this ) +
+                std::get< 4 >( *this ) +
+                std::get< 5 >( *this ) +
+                std::get< 6 >( *this )
+            )
+        );
+    }
+
+    constexpr bool operator==( const dimensions rhs ) const
+    {
+        return std::get< 0 >( *this ) == std::get< 0 >( rhs )  &&
+            std::get< 1 >( *this ) == std::get< 1 >( rhs ) &&
+            std::get< 2 >( *this ) == std::get< 2 >( rhs ) &&
+            std::get< 3 >( *this ) == std::get< 3 >( rhs ) &&
+            std::get< 4 >( *this ) == std::get< 4 >( rhs ) &&
+            std::get< 5 >( *this ) == std::get< 5 >( rhs ) &&
+            std::get< 6 >( *this ) == std::get< 6 >( rhs );
+    }
+
+    constexpr dimensions operator+( const dimensions rhs ) const
+    {
+        return T_Tuple{
+            std::get< 0 >( *this ) + std::get< 0 >( rhs ),
+            std::get< 1 >( *this ) + std::get< 1 >( rhs ),
+            std::get< 2 >( *this ) + std::get< 2 >( rhs ),
+            std::get< 3 >( *this ) + std::get< 3 >( rhs ),
+            std::get< 4 >( *this ) + std::get< 4 >( rhs ),
+            std::get< 5 >( *this ) + std::get< 5 >( rhs ),
+            std::get< 6 >( *this ) + std::get< 6 >( rhs )
+        };
+    }
+
+    constexpr dimensions operator-( const dimensions rhs ) const
+    {
+        return T_Tuple{
+            std::get< 0 >( *this ) - std::get< 0 >( rhs ),
+            std::get< 1 >( *this ) - std::get< 1 >( rhs ),
+            std::get< 2 >( *this ) - std::get< 2 >( rhs ),
+            std::get< 3 >( *this ) - std::get< 3 >( rhs ),
+            std::get< 4 >( *this ) - std::get< 4 >( rhs ),
+            std::get< 5 >( *this ) - std::get< 5 >( rhs ),
+            std::get< 6 >( *this ) - std::get< 6 >( rhs )
+        };
+    }
+
+    constexpr dimensions operator*( const dimensions rhs ) const
+    {
+        return T_Tuple{
+            std::get< 0 >( *this ) * std::get< 0 >( rhs ),
+            std::get< 1 >( *this ) * std::get< 1 >( rhs ),
+            std::get< 2 >( *this ) * std::get< 2 >( rhs ),
+            std::get< 3 >( *this ) * std::get< 3 >( rhs ),
+            std::get< 4 >( *this ) * std::get< 4 >( rhs ),
+            std::get< 5 >( *this ) * std::get< 5 >( rhs ),
+            std::get< 6 >( *this ) * std::get< 6 >( rhs )
+        };
+    }
+
+    constexpr dimensions operator*( const dim_type rhs ) const
+    {
+        return T_Tuple{
+            std::get< 0 >( *this ) * rhs,
+            std::get< 1 >( *this ) * rhs,
+            std::get< 2 >( *this ) * rhs,
+            std::get< 3 >( *this ) * rhs,
+            std::get< 4 >( *this ) * rhs,
+            std::get< 5 >( *this ) * rhs,
+            std::get< 6 >( *this ) * rhs
+        };
+    }
+
+    constexpr bool operator!=( const dim_type rhs ) const
     {
         return !( *this == rhs );
     }
 };
 
-/// demensionless 'dimension'.
+template< typename... T >
+constexpr auto
+make_dimensions(const T... args)
+-> dimensions <
+    std::tuple< T... >
+>
+{
+    return std::tuple< T... >{args...};
+};
 
-typedef dimensions< 0, 0, 0 > dimensionless_d;
 
 /// namespace detail.
-
+#if 0
 namespace detail {
 
 /**
@@ -256,7 +440,9 @@ struct root
 
 template< typename D, int N, typename T >
 using Root = typename detail::root< D, N, T >::type;
-
+#endif
+namespace detail
+{
 /**
  * tag to construct a quantity from a magnitude.
  */
@@ -274,27 +460,26 @@ class quantity
 {
 public:
     typedef Dims dimension_type;
+    typedef typename Dims::dim_type::exp_type exp_type;
 
     typedef T value_type;
 
-    typedef quantity<Dims, T> this_type;
-
-    constexpr quantity() : m_value{} { }
+    constexpr quantity() : m_value{}, m_dim{} { }
 
     /**
      * public converting initializing constructor;
      * requires magnitude_tag to prevent constructing a quantity from a raw magnitude.
      */
     template <typename X>
-    constexpr explicit quantity( detail::magnitude_tag_t, X x )
-    : m_value( x ) { }
+    constexpr explicit quantity( detail::magnitude_tag_t, const X x, const dimension_type dim )
+    : m_value( x ), m_dim( dim ) { }
 
     /**
      * converting copy-assignment constructor.
      */
     template <typename X >
     constexpr quantity( quantity<Dims, X> const & x )
-    : m_value( x.magnitude() ) { }
+    : m_value( x.magnitude() ), m_dim( x.dimension() ) { }
 
 //    /**
 //     * convert to compatible unit, for example: (3._dm).to(meter) gives 0.3;
@@ -304,8 +489,7 @@ public:
     /**
      * convert to given unit, for example: (3._dm).to(meter) gives 0.3;
      */
-    template <typename DX, typename X>
-    constexpr auto to( quantity<DX,X> const & x ) const -> detail::Quotient<Dims,DX,T,X>
+    constexpr auto to( quantity const & x ) const -> quantity
     {
         return *this / x;
     }
@@ -318,7 +502,7 @@ public:
     /**
      * the quantity's dimensions.
      */
-    constexpr dimension_type dimension() const { return dimension_type{}; }
+    constexpr dimension_type dimension() const { return m_dim; }
 
     /**
      * We need a "zero" of each type -- for comparisons, to initialize running
@@ -333,78 +517,108 @@ private:
     /**
      * private initializing constructor.
      */
-    constexpr explicit quantity( value_type x ) : m_value{ x } { }
+    constexpr quantity( value_type x, dimension_type dim ) : m_value{ x }, m_dim{ dim } { }
 
 private:
     value_type m_value;
+    dimension_type m_dim;
 
-    enum { has_dimension = ! Dims::is_all_zero };
-
-    static_assert( has_dimension, "quantity dimensions must not all be zero" );
-
-private:
+public:
     // friends:
 
     // arithmetic
 
+    template< typename X >
+    constexpr auto
+    operator/(const quantity< dimension_type, X > & x) const ->
+        quantity<
+            dimension_type,
+            typename std::conditional< sizeof(T) >= sizeof(X), T, X >::type
+        >
+    {
+        return quantity<
+            dimension_type,
+            typename std::conditional< sizeof(T) >= sizeof(X), T, X >::type
+        >{ detail::magnitude_tag, m_value / x.magnitude(), m_dim - x.dimension() };
+    }
+
+    template< typename X >
+    constexpr auto
+    operator*(const quantity< dimension_type, X > & x) const ->
+        quantity<
+            dimension_type,
+            typename std::conditional< sizeof(T) >= sizeof(X), T, X >::type
+        >
+    {
+        return quantity<
+            dimension_type,
+            typename std::conditional< sizeof(T) >= sizeof(X), T, X >::type
+        >{ detail::magnitude_tag, m_value * x.magnitude(), m_dim + x.dimension() };
+    }
+
+    template< typename X >
+    constexpr auto
+    operator-(const quantity< dimension_type, X > & x) const ->
+        quantity<
+            dimension_type,
+            typename std::conditional< sizeof(T) >= sizeof(X), T, X >::type
+        >
+    {
+        return quantity<
+            dimension_type,
+            typename std::conditional< sizeof(T) >= sizeof(X), T, X >::type
+        >{ detail::magnitude_tag, m_value - x.magnitude(), dimension() };
+    }
+
+    template< typename X >
+    constexpr auto
+    operator+(const quantity< dimension_type, X > & x) const ->
+        quantity<
+            dimension_type,
+            typename std::conditional< sizeof(T) >= sizeof(X), T, X >::type
+        >
+    {
+        return quantity<
+            dimension_type,
+            typename std::conditional< sizeof(T) >= sizeof(X), T, X >::type
+        >{ detail::magnitude_tag, m_value + x.magnitude(), dimension() };
+    }
+
     template <typename D, typename X, typename Y>
-    friend constexpr quantity<D, X> &
-    operator+=( quantity<D, X> & x, quantity<D, Y> const & y );
-
-    template <typename D, typename X>
-    friend constexpr quantity<D, X>
-    operator+( quantity<D, X> const & x );
-
-    template< typename D, typename X, typename Y >
-    friend constexpr quantity <D, detail::PromoteAdd<X,Y>>
-    operator+( quantity<D, X> const & x, quantity<D, Y> const & y );
+    friend constexpr auto
+    operator*( const Y & y, quantity<D, X> const & x ) ->
+        quantity<
+            D,
+            typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+        >;
 
     template <typename D, typename X, typename Y>
-    friend constexpr quantity<D, X> &
-    operator-=( quantity<D, X> & x, quantity<D, Y> const & y );
-
-    template <typename D, typename X>
-    friend constexpr quantity<D, X>
-    operator-( quantity<D, X> const & x );
-
-    template< typename D, typename X, typename Y >
-    friend constexpr quantity <D, detail::PromoteAdd<X,Y>>
-    operator-( quantity<D, X> const & x, quantity<D, Y> const & y );
-
-    template< typename D, typename X, typename Y>
-    friend constexpr quantity<D, X> &
-    operator*=( quantity<D, X> & x, const Y & y );
+    friend constexpr auto
+    operator*( quantity<D, X> const & x, const Y & y ) ->
+        quantity<
+            D,
+            typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+        >;
 
     template <typename D, typename X, typename Y>
-    friend constexpr quantity<D, detail::PromoteMul<X,Y>>
-    operator*( quantity<D, X> const & x, const Y & y );
+    friend constexpr auto
+    operator/( const Y & y, quantity<D, X> const & x ) ->
+        quantity<
+            D,
+            typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+        >;
 
     template <typename D, typename X, typename Y>
-    friend constexpr quantity< D, detail::PromoteMul<X,Y> >
-    operator*( const X & x, quantity<D, Y> const & y );
+    friend constexpr auto
+    operator/( quantity<D, X> const & x, const Y & y ) ->
+        quantity<
+            D,
+            typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+        >;
 
-    template <typename DX, typename DY, typename X, typename Y>
-    friend constexpr detail::Product<DX, DY, X, Y>
-    operator*( quantity<DX, X> const & lhs, quantity< DY, Y > const & rhs );
-
-    template< typename D, typename X, typename Y>
-    friend constexpr quantity<D, X> &
-    operator/=( quantity<D, X> & x, const Y & y );
-
-    template <typename D, typename X, typename Y>
-    friend constexpr quantity<D, detail::PromoteMul<X,Y>>
-    operator/( quantity<D, X> const & x, const Y & y );
-
-    template <typename D, typename X, typename Y>
-    friend constexpr detail::Reciprocal<D, X, Y>
-    operator/( const X & x, quantity<D, Y> const & y );
-
-    template <typename DX, typename DY, typename X, typename Y>
-    friend constexpr detail::Quotient<DX, DY, X, Y>
-    operator/( quantity<DX, X> const & x, quantity< DY, Y > const & y );
 
     // absolute value.
-
+#if 0
     template <typename D, typename X>
     friend constexpr quantity<D,X>
     abs( quantity<D,X> const & x );
@@ -450,18 +664,107 @@ private:
 
     template <typename D, typename X, typename Y>
     friend constexpr bool operator>=( quantity<D, X> const & x, quantity<D, Y> const & y );
+
+#endif
 };
+
+template< typename T_Mag, typename T_Dim >
+constexpr quantity< T_Dim, T_Mag >
+make_quantity( const T_Mag mag, const T_Dim dim )
+{
+    return quantity< T_Dim, T_Mag >{ detail::magnitude_tag, mag, dim };
+}
+
+#if 0
+template< typename T >
+struct GetSymbol
+{
+
+
+
+};
+#endif
+
 
 // Give names to the seven fundamental dimensions of physical reality.
 
-typedef dimensions< 1, 0, 0, 0, 0, 0, 0 > length_d;
-typedef dimensions< 0, 1, 0, 0, 0, 0, 0 > mass_d;
-typedef dimensions< 0, 0, 1, 0, 0, 0, 0 > time_interval_d;
-typedef dimensions< 0, 0, 0, 1, 0, 0, 0 > electric_current_d;
-typedef dimensions< 0, 0, 0, 0, 1, 0, 0 > thermodynamic_temperature_d;
-typedef dimensions< 0, 0, 0, 0, 0, 1, 0 > amount_of_substance_d;
-typedef dimensions< 0, 0, 0, 0, 0, 0, 1 > luminous_intensity_d;
+namespace si
+{
+    constexpr dimension<DimType> length = { "m", 1 };
+    constexpr dimension<DimType> mass = { "kg", 1 };
+    constexpr dimension<DimType> time_interval = { "s", 1 };
+    constexpr dimension<DimType> electric_current = { "A", 1 };
+    constexpr dimension<DimType> thermodynamic_temperature = { "K", 1 };
+    constexpr dimension<DimType> amount_of_substance = { "mol", 1 };
+    constexpr dimension<DimType> luminous_intensity = { "cd", 1 };
+}
 
+// Low powers defined separately for efficiency.
+
+/// square.
+
+template <typename D, typename X>
+constexpr quantity<D, X>
+square( quantity<D, X> const & x )
+{
+   return x * x;
+}
+
+/// cube.
+
+template <typename D, typename X>
+constexpr quantity<D, X>
+cube( quantity<D, X> const & x )
+{
+   return x * x * x;
+}
+
+
+template <typename D, typename X, typename Y>
+constexpr auto
+operator*( const Y & y, quantity<D, X> const & x )
+-> quantity<
+    D,
+    typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+>
+{
+    return quantity<D,X>( y * x.m_value, x.m_dim );
+}
+
+template <typename D, typename X, typename Y>
+constexpr auto
+operator*( quantity<D, X> const & x, const Y & y )
+-> quantity<
+    D,
+    typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+>
+{
+    return quantity<D,X>( y * x.m_value, x.m_dim );
+}
+
+template <typename D, typename X, typename Y>
+constexpr auto
+operator/( const Y & y, quantity<D, X> const & x )
+-> quantity<
+    D,
+    typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+>
+{
+    return quantity<D,X>( y / x.m_value, x.m_dim );
+}
+
+template <typename D, typename X, typename Y>
+constexpr auto
+operator/( quantity<D, X> const & x, const Y & y )
+-> quantity<
+    D,
+    typename std::conditional< sizeof(X) >= sizeof(Y), X, Y >::type
+>
+{
+    return quantity<D,X>( x.m_value / y, x.m_dim );
+}
+
+#if 0
 // Addition operators
 
 /// quan += quan
@@ -727,16 +1030,116 @@ inline constexpr DX dimension( quantity<DX,X> const & q ) { return q.dimension()
 
 template <typename DX, typename X>
 inline constexpr X magnitude( quantity<DX,X> const & q ) { return q.magnitude(); }
-
+#endif
 // The seven SI base units.  These tie our numbers to the real world.
 
-constexpr quantity<length_d                   > meter   { detail::magnitude_tag, 1.0 };
-constexpr quantity<mass_d                     > kilogram{ detail::magnitude_tag, 1.0 };
-constexpr quantity<time_interval_d            > second  { detail::magnitude_tag, 1.0 };
-constexpr quantity<electric_current_d         > ampere  { detail::magnitude_tag, 1.0 };
-constexpr quantity<thermodynamic_temperature_d> kelvin  { detail::magnitude_tag, 1.0 };
-constexpr quantity<amount_of_substance_d      > mole    { detail::magnitude_tag, 1.0 };
-constexpr quantity<luminous_intensity_d       > candela { detail::magnitude_tag, 1.0 };
+constexpr auto meter = make_quantity(
+    Rep( 1.0 ),
+    make_dimensions(
+        si::length,
+        si::mass.zero(),
+        si::time_interval.zero(),
+        si::electric_current.zero(),
+        si::thermodynamic_temperature.zero(),
+        si::amount_of_substance.zero(),
+        si::luminous_intensity.zero()
+    )
+);
+
+namespace pic
+{
+    constexpr auto meter = make_quantity(
+    Rep( 5.0 ),
+    make_dimensions(
+        si::length,
+        si::mass.zero(),
+        si::time_interval.zero(),
+        si::electric_current.zero(),
+        si::thermodynamic_temperature.zero(),
+        si::amount_of_substance.zero(),
+        si::luminous_intensity.zero()
+    )
+);
+}
+
+constexpr auto kilogram = make_quantity(
+    Rep( 1.0 ),
+    make_dimensions(
+        si::length.zero(),
+        si::mass,
+        si::time_interval.zero(),
+        si::electric_current.zero(),
+        si::thermodynamic_temperature.zero(),
+        si::amount_of_substance.zero(),
+        si::luminous_intensity.zero()
+    )
+);
+
+constexpr auto second = make_quantity(
+    Rep( 1.0 ),
+    make_dimensions(
+        si::length.zero(),
+        si::mass.zero(),
+        si::time_interval,
+        si::electric_current.zero(),
+        si::thermodynamic_temperature.zero(),
+        si::amount_of_substance.zero(),
+        si::luminous_intensity.zero()
+    )
+);
+
+constexpr auto ampere = make_quantity(
+    Rep( 1.0 ),
+    make_dimensions(
+        si::length.zero(),
+        si::mass.zero(),
+        si::time_interval.zero(),
+        si::electric_current,
+        si::thermodynamic_temperature.zero(),
+        si::amount_of_substance.zero(),
+        si::luminous_intensity.zero()
+    )
+);
+
+constexpr auto kelvin = make_quantity(
+    Rep( 1.0 ),
+    make_dimensions(
+        si::length.zero(),
+        si::mass.zero(),
+        si::time_interval.zero(),
+        si::electric_current.zero(),
+        si::thermodynamic_temperature,
+        si::amount_of_substance.zero(),
+        si::luminous_intensity.zero()
+    )
+);
+
+constexpr auto mole = make_quantity(
+    Rep( 1.0 ),
+    make_dimensions(
+        si::length.zero(),
+        si::mass.zero(),
+        si::time_interval.zero(),
+        si::electric_current.zero(),
+        si::thermodynamic_temperature.zero(),
+        si::amount_of_substance,
+        si::luminous_intensity.zero()
+    )
+);
+
+constexpr auto candela = make_quantity(
+    Rep( 1.0 ),
+    make_dimensions(
+        si::length.zero(),
+        si::mass.zero(),
+        si::time_interval.zero(),
+        si::electric_current.zero(),
+        si::thermodynamic_temperature.zero(),
+        si::amount_of_substance.zero(),
+        si::luminous_intensity
+    )
+);
+
 
 // The standard SI prefixes.
 
@@ -772,6 +1175,7 @@ constexpr long double exbi = 1024 * pebi;
 constexpr long double zebi = 1024 * exbi;
 constexpr long double yobi = 1024 * zebi;
 
+#if 0
 // The rest of the standard dimensional types, as specified in SP811.
 
 using absorbed_dose_d             = dimensions< 2, 0, -2 >;
@@ -839,105 +1243,105 @@ using torque_d                    = dimensions< 2, 1, -2 >;
 using volume_d                    = dimensions< 3, 0, 0 >;
 using volume_flow_rate_d          = dimensions< 3, 0, -1 >;
 using wave_number_d               = dimensions< -1, 0, 0 >;
-
+#endif
 // Handy values.
 
 constexpr Rep pi      { Rep( 3.141592653589793238462L ) };
 constexpr Rep percent { Rep( 1 ) / 100 };
 
 //// Not approved for use alone, but needed for use with prefixes.
-constexpr quantity< mass_d                  > gram         { kilogram / 1000 };
+constexpr auto gram         { kilogram / 1000 };
 
 // The derived SI units, as specified in SP811.
 
 constexpr Rep                                 radian       { Rep( 1 ) };
 constexpr Rep                                 steradian    { Rep( 1 ) };
-constexpr quantity< force_d                 > newton       { meter * kilogram / square( second ) };
-constexpr quantity< pressure_d              > pascal       { newton / square( meter ) };
-constexpr quantity< energy_d                > joule        { newton * meter };
-constexpr quantity< power_d                 > watt         { joule / second };
-constexpr quantity< electric_charge_d       > coulomb      { second * ampere };
-constexpr quantity< electric_potential_d    > volt         { watt / ampere };
-constexpr quantity< capacitance_d           > farad        { coulomb / volt };
-constexpr quantity< electric_resistance_d   > ohm          { volt / ampere };
-constexpr quantity< electric_conductance_d  > siemens      { ampere / volt };
-constexpr quantity< magnetic_flux_d         > weber        { volt * second };
-constexpr quantity< magnetic_flux_density_d > tesla        { weber / square( meter ) };
-constexpr quantity< inductance_d            > henry        { weber / ampere };
-constexpr quantity< thermodynamic_temperature_d > degree_celsius   { kelvin };
-constexpr quantity< luminous_flux_d         > lumen        { candela * steradian };
-constexpr quantity< illuminance_d           > lux          { lumen / meter / meter };
-constexpr quantity< activity_of_a_nuclide_d > becquerel    { 1 / second };
-constexpr quantity< absorbed_dose_d         > gray         { joule / kilogram };
-constexpr quantity< dose_equivalent_d       > sievert      { joule / kilogram };
-constexpr quantity< frequency_d             > hertz        { 1 / second };
+constexpr auto newton       { meter * kilogram / square( second ) };
+constexpr auto pascal       { newton / square( meter ) };
+constexpr auto joule        { newton * meter };
+constexpr auto watt         { joule / second };
+constexpr auto coulomb      { second * ampere };
+constexpr auto volt         { watt / ampere };
+constexpr auto farad        { coulomb / volt };
+constexpr auto ohm          { volt / ampere };
+constexpr auto siemens      { ampere / volt };
+constexpr auto weber        { volt * second };
+constexpr auto tesla        { weber / square( meter ) };
+constexpr auto henry        { weber / ampere };
+constexpr auto degree_celsius   { kelvin };
+constexpr auto lumen        { candela * steradian };
+constexpr auto lux          { lumen / meter / meter };
+constexpr auto becquerel    { 1 / second };
+constexpr auto gray         { joule / kilogram };
+constexpr auto sievert      { joule / kilogram };
+constexpr auto hertz        { 1 / second };
 
 // The rest of the units approved for use with SI, as specified in SP811.
 // (However, use of these units is generally discouraged.)
 
-constexpr quantity< length_d                > angstrom     { Rep( 1e-10L ) * meter };
-constexpr quantity< area_d                  > are          { Rep( 1e+2L ) * square( meter ) };
-constexpr quantity< pressure_d              > bar          { Rep( 1e+5L ) * pascal };
-constexpr quantity< area_d                  > barn         { Rep( 1e-28L ) * square( meter ) };
-constexpr quantity< activity_of_a_nuclide_d > curie        { Rep( 3.7e+10L ) * becquerel };
-constexpr quantity< time_interval_d         > day          { Rep( 86400L ) * second };
+constexpr auto angstrom     { Rep( 1e-10L ) * meter };
+constexpr auto are          { Rep( 1e+2L ) * square( meter ) };
+constexpr auto bar          { Rep( 1e+5L ) * pascal };
+constexpr auto barn         { Rep( 1e-28L ) * square( meter ) };
+constexpr auto curie        { Rep( 3.7e+10L ) * becquerel };
+constexpr auto day          { Rep( 86400L ) * second };
 constexpr Rep                                 degree_angle { pi / 180 };
-constexpr quantity< acceleration_d          > gal          { Rep( 1e-2L ) * meter / square( second ) };
-constexpr quantity< area_d                  > hectare      { Rep( 1e+4L ) * square( meter ) };
-constexpr quantity< time_interval_d         > hour         { Rep( 3600 ) * second };
-constexpr quantity< speed_d                 > knot         { Rep( 1852 ) / 3600 * meter / second };
-constexpr quantity< volume_d                > liter        { Rep( 1e-3L ) * cube( meter ) };
-constexpr quantity< time_interval_d         > minute       { Rep( 60 ) * second };
+constexpr auto gal          { Rep( 1e-2L ) * meter / square( second ) };
+constexpr auto hectare      { Rep( 1e+4L ) * square( meter ) };
+constexpr auto hour         { Rep( 3600 ) * second };
+constexpr auto knot         { Rep( 1852 ) / 3600 * meter / second };
+constexpr auto liter        { Rep( 1e-3L ) * cube( meter ) };
+constexpr auto minute       { Rep( 60 ) * second };
 constexpr Rep                                 minute_angle { pi / 10800 };
-constexpr quantity< length_d                > mile_nautical{ Rep( 1852 ) * meter };
-constexpr quantity< absorbed_dose_d         > rad          { Rep( 1e-2L ) * gray };
-constexpr quantity< dose_equivalent_d       > rem          { Rep( 1e-2L ) * sievert };
-constexpr quantity< exposure_d              > roentgen     { Rep( 2.58e-4L ) * coulomb / kilogram };
+constexpr auto mile_nautical{ Rep( 1852 ) * meter };
+constexpr auto rad          { Rep( 1e-2L ) * gray };
+constexpr auto rem          { Rep( 1e-2L ) * sievert };
+constexpr auto roentgen     { Rep( 2.58e-4L ) * coulomb / kilogram };
 constexpr Rep                                 second_angle { pi / 648000L };
-constexpr quantity< mass_d                  > ton_metric   { Rep( 1e+3L ) * kilogram };
+constexpr auto ton_metric   { Rep( 1e+3L ) * kilogram };
 
 // Alternate (non-US) spellings:
 
-constexpr quantity< length_d                > metre        { meter };
-constexpr quantity< volume_d                > litre        { liter };
+constexpr auto metre        { meter };
+constexpr auto litre        { liter };
 constexpr Rep                                 deca         { deka };
-constexpr quantity< mass_d                  > tonne        { ton_metric };
+constexpr auto tonne        { ton_metric };
 
 // cooked literals for base units;
 // these could also have been created with a script.
 
-#define QUANTITY_DEFINE_SCALING_LITERAL( sfx, dim, factor ) \
-    constexpr quantity<dim, long double> operator "" _ ## sfx(unsigned long long x) \
+#define QUANTITY_DEFINE_SCALING_LITERAL( sfx, quant, factor ) \
+    constexpr quantity<  decltype(quant.dimension()), long double> operator "" _ ## sfx(unsigned long long x) \
     { \
-        return quantity<dim, long double>( detail::magnitude_tag, factor * x ); \
+        return make_quantity( factor * x, quant.dimension() ); \
     } \
-    constexpr quantity<dim, long double> operator "" _ ## sfx(long double x) \
+    constexpr quantity< decltype(quant.dimension()), long double> operator "" _ ## sfx(long double x) \
     { \
-        return quantity<dim, long double>( detail::magnitude_tag, factor * x ); \
+        return make_quantity( factor * x, quant.dimension() ); \
     }
 
-#define QUANTITY_DEFINE_SCALING_LITERALS( pfx, dim, fact ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( Y ## pfx, dim, fact * yotta ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( Z ## pfx, dim, fact * zetta ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( E ## pfx, dim, fact * exa   ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( P ## pfx, dim, fact * peta  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( T ## pfx, dim, fact * tera  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( G ## pfx, dim, fact * giga  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( M ## pfx, dim, fact * mega  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( k ## pfx, dim, fact * kilo  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( h ## pfx, dim, fact * hecto ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( da## pfx, dim, fact * deka  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL(      pfx, dim, fact * 1     ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( d ## pfx, dim, fact * deci  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( c ## pfx, dim, fact * centi ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( m ## pfx, dim, fact * milli ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( u ## pfx, dim, fact * micro ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( n ## pfx, dim, fact * nano  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( p ## pfx, dim, fact * pico  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( f ## pfx, dim, fact * femto ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( a ## pfx, dim, fact * atto  ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( z ## pfx, dim, fact * zepto ) \
-    QUANTITY_DEFINE_SCALING_LITERAL( y ## pfx, dim, fact * yocto )
+#define QUANTITY_DEFINE_SCALING_LITERALS( pfx, quant, fact ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( Y ## pfx, quant, fact * yotta ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( Z ## pfx, quant, fact * zetta ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( E ## pfx, quant, fact * exa   ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( P ## pfx, quant, fact * peta  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( T ## pfx, quant, fact * tera  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( G ## pfx, quant, fact * giga  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( M ## pfx, quant, fact * mega  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( k ## pfx, quant, fact * kilo  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( h ## pfx, quant, fact * hecto ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( da## pfx, quant, fact * deka  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL(      pfx, quant, fact * 1     ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( d ## pfx, quant, fact * deci  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( c ## pfx, quant, fact * centi ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( m ## pfx, quant, fact * milli ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( u ## pfx, quant, fact * micro ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( n ## pfx, quant, fact * nano  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( p ## pfx, quant, fact * pico  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( f ## pfx, quant, fact * femto ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( a ## pfx, quant, fact * atto  ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( z ## pfx, quant, fact * zepto ) \
+    QUANTITY_DEFINE_SCALING_LITERAL( y ## pfx, quant, fact * yocto )
 
 
 #define QUANTITY_DEFINE_LITERALS( pfx, dim ) \
@@ -947,14 +1351,14 @@ constexpr quantity< mass_d                  > tonne        { ton_metric };
 
 namespace literals {
 
-QUANTITY_DEFINE_SCALING_LITERALS( g, mass_d, 1e-3 )
+QUANTITY_DEFINE_SCALING_LITERALS( g, phys::units::kilogram, 1e-3 )
 
-QUANTITY_DEFINE_LITERALS( m  , length_d )
-QUANTITY_DEFINE_LITERALS( s  , time_interval_d )
-QUANTITY_DEFINE_LITERALS( A  , electric_current_d )
-QUANTITY_DEFINE_LITERALS( K  , thermodynamic_temperature_d )
-QUANTITY_DEFINE_LITERALS( mol, amount_of_substance_d )
-QUANTITY_DEFINE_LITERALS( cd , luminous_intensity_d )
+QUANTITY_DEFINE_LITERALS( m  , phys::units::meter )
+QUANTITY_DEFINE_LITERALS( s  , phys::units::second )
+QUANTITY_DEFINE_LITERALS( A  , phys::units::ampere )
+QUANTITY_DEFINE_LITERALS( K  , phys::units::kelvin )
+QUANTITY_DEFINE_LITERALS( mol, phys::units::mole )
+QUANTITY_DEFINE_LITERALS( cd , phys::units::candela )
 
 } // namespace literals
 

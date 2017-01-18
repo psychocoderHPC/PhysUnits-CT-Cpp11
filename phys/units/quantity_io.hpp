@@ -30,6 +30,7 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <utility>
 
 /// namespace phys.
 
@@ -38,6 +39,20 @@ namespace phys {
 /// namespace units.
 
 namespace units {
+
+
+template<std::size_t I = 0, typename FuncT, typename... Tp>
+inline typename std::enable_if<I == sizeof...(Tp), void>::type
+for_each(const std::tuple<Tp...> &, FuncT&) // Unused arguments are given no names.
+{ }
+
+template<std::size_t I = 0, typename FuncT, typename... Tp>
+inline typename std::enable_if<I < sizeof...(Tp), void>::type
+for_each(const std::tuple<Tp...>& t, FuncT& f)
+{
+  f(std::get<I>(t));
+  for_each<I + 1, FuncT, Tp...>(t, f);
+}
 
 /// quantity error base class (not used by quantity itself).
 
@@ -93,6 +108,50 @@ inline Rep prefix( std::string const prefix_ )
     return pos->second;
 }
 
+template< typename T >
+static std::string emit_dim( const char * label, T exp )
+{
+    std::string str{};
+
+    if( exp == T(0) )
+        return str;
+
+    str = label;
+
+
+    if( exp != T(1) && exp > T(0))
+        str += "+";
+
+    if( exp != T(1) )
+        str += std::to_string(exp);
+
+    return str;
+}
+
+template< typename  Type, typename F>
+struct StringStorage
+{
+    const F functor;
+    Type storage;
+
+
+    template< typename T >
+    void operator()( const T& elem )
+    {
+        storage += functor( elem ) + " ";
+    }
+};
+
+struct GetSymbol
+{
+    template< typename T >
+    std::string operator()( const T& dim ) const
+    {
+        return emit_dim(dim.m_symbol.str, dim.m_exp);
+    }
+
+};
+
 /**
  * Provide SI units-and-exponents in as close to NIST-specified format as possible with plain ascii.
  *
@@ -117,8 +176,8 @@ struct unit_info
     }
 
     /// provide unit's symbol.
-
-    static std::string symbol()
+    template< typename T >
+    static std::string symbol( const T quant )
     {
         std::ostringstream os;
 
@@ -159,13 +218,14 @@ struct unit_info
 
 }} // namespace phys::units
 
+#if 0
 #include "quantity_io_meter.hpp"
 #include "quantity_io_kilogram.hpp"
 #include "quantity_io_second.hpp"
 #include "quantity_io_ampere.hpp"
 #include "quantity_io_mole.hpp"
 #include "quantity_io_candela.hpp"
-
+#endif
 /*
  * User must choose celsius or kelvin, either by defining
  * QUANTITY_USE_CELSIUS or QUANTITY_USE_KELVIN, or by
@@ -204,9 +264,13 @@ std::string to_unit_name( quantity<Dims, T> const & /* q  */)
 /// unit symbol.
 
 template< typename Dims, typename T >
-std::string to_unit_symbol( quantity<Dims, T> const & /* q */)
+std::string to_unit_symbol( quantity<Dims, T> const & q)
 {
-    return unit_info<Dims>::symbol();
+
+    StringStorage< std::string, GetSymbol > str{};
+
+    phys::units::for_each( q.dimension( ), str );
+    return str.storage;
 }
 
 /// string representation of value.
