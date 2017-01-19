@@ -45,17 +45,17 @@ const lest::test compile_time[] =
 
     "quantity can be default-constructed (non-initialized)", []
     {
-        quantity<mass_d> mass;
+        quantity<decltype( meter.dimension() )> mass;
     },
 
     "quantity cannot be constructed from scalar", []
     {
-        quantity<mass_d> mass = mag;
+        quantity<decltype( meter.dimension() )> mass = mag;
     },
 
     "quantity cannot be copy-constructed from different dimension", []
     {
-        quantity<mass_d  > mass( detail::magnitude_tag, mag );
+        quantity<decltype( meter.dimension() )  > mass( detail::magnitude_tag, mag );
         quantity<length_d> length( mass );
     },
 };
@@ -66,16 +66,16 @@ const lest::test construction[] =
 {
     "quantity can be magnitude-constructed", []
     {
-        quantity<mass_d, int> mass( detail::magnitude_tag, mag );
+        quantity<decltype( meter.dimension() ), int> mass( detail::magnitude_tag, mag );
 
         EXPECT( mass.magnitude() == mag );
-        EXPECT( mass.dimension() == mass_d{} );
+        EXPECT( mass.dimension() == decltype( meter.dimension() ){} );
     },
 
     "quantity can be copy-constructed", []
     {
-        quantity<mass_d, int> mass1( detail::magnitude_tag, mag );
-        quantity<mass_d, int> mass2( mass1 );
+        quantity<decltype( meter.dimension() ), int> mass1( detail::magnitude_tag, mag );
+        quantity<decltype( meter.dimension() ), int> mass2( mass1 );
 
         EXPECT( mass2.magnitude() == mag );
         EXPECT( mass2.magnitude() == mass1.magnitude() );
@@ -84,8 +84,8 @@ const lest::test construction[] =
 
     "quantity can be copy-assigned", []
     {
-        quantity<mass_d, int> mass1( detail::magnitude_tag, mag + 1 );
-        quantity<mass_d, int> mass2( detail::magnitude_tag, mag + 2 );
+        quantity<decltype( meter.dimension() ), int> mass1( detail::magnitude_tag, mag + 1 );
+        quantity<decltype( meter.dimension() ), int> mass2( detail::magnitude_tag, mag + 2 );
 
         mass2 = mass1;
 
@@ -95,8 +95,8 @@ const lest::test construction[] =
 
     "quantity can be conversion copy-constructed", []
     {
-        quantity<mass_d,int > mass1( detail::magnitude_tag, mag );
-        quantity<mass_d,long> mass2( mass1 );
+        quantity<decltype( meter.dimension() ),int > mass1( detail::magnitude_tag, mag );
+        quantity<decltype( meter.dimension() ),long> mass2( mass1 );
 
         EXPECT( mass2.magnitude() == mag );
         EXPECT( mass2.magnitude() == mass1.magnitude() );
@@ -105,8 +105,8 @@ const lest::test construction[] =
 
     "quantity can be conversion copy-assigned", []
     {
-        quantity<mass_d,int > mass1( detail::magnitude_tag, mag + 1 );
-        quantity<mass_d,long> mass2( detail::magnitude_tag, mag + 2 );
+        quantity<decltype( meter.dimension() ),int > mass1( detail::magnitude_tag, mag + 1 );
+        quantity<decltype( meter.dimension() ),long> mass2( detail::magnitude_tag, mag + 2 );
 
         mass2 = mass1;
 
@@ -528,7 +528,7 @@ const lest::test units[] =
         EXPECT( s( quantity< magnetic_flux_d >::zero() ) == "0.000000 m+2 kg s-2 A-1" );
         EXPECT( s( quantity< magnetic_flux_density_d >::zero() ) == "0.000000 kg s-2 A-1" );
         EXPECT( s( quantity< magnetic_permeability_d >::zero() ) == "0.000000 m kg s-2 A-2" );
-        EXPECT( s( quantity< mass_density_d >::zero() ) == "0.000000 m-3 kg" );
+        EXPECT( s( quantity< decltype( meter.dimension() )ensity_d >::zero() ) == "0.000000 m-3 kg" );
         EXPECT( s( quantity< mass_flow_rate_d >::zero() ) == "0.000000 kg s-1" );
         EXPECT( s( quantity< molar_energy_d >::zero() ) == "0.000000 m+2 kg s-2 mol-1" );
         EXPECT( s( quantity< molar_entropy_d >::zero() ) == "0.000000 m+2 kg s-2 A-1 mol-1" );

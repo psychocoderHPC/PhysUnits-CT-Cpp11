@@ -33,6 +33,8 @@
 #include <cstdlib>
 #include <utility>  // std::declval
 
+#include "phys/units/ct_math/pow.hpp"
+
 /// namespace phys.
 
 namespace phys {
