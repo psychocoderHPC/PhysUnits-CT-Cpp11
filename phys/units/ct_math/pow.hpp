@@ -35,7 +35,12 @@ namespace detail
 template< typename T_Type >
 constexpr T_Type pow( T_Type const x , int const exp )
 {
-    return detail::pow( x, exp );
+    return
+    (
+        ( exp >= 0 ) ?
+            detail::pow( x, exp ) :
+            ( T_Type( 1 ) / detail::pow( x, -exp ) )
+    );
 }
 
 } // namespace ct_math
