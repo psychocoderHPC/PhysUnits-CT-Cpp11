@@ -34,6 +34,8 @@
 #include <utility>  // std::declval
 #include "phys/units/ct_math/pow.hpp"
 
+#include "ct_math/sqrt.hpp"
+
 /// namespace phys.
 
 namespace phys {
@@ -429,7 +431,7 @@ private:
     nth_root( quantity<D, X> const & x );
 
     template <typename D, typename X>
-    friend detail::Root< D, 2, X >
+    friend constexpr detail::Root< D, 2, X >
     sqrt( quantity<D, X> const & x );
 
     // comparison
@@ -654,13 +656,13 @@ nth_root( quantity<D, X> const & x )
 /// square root.
 
 template <typename D, typename X>
-detail::Root< D, 2, X >
+constexpr detail::Root< D, 2, X >
 sqrt( quantity<D, X> const & x )
 {
    static_assert(
       detail::root<D, 2, X >::all_even_multiples, "root result dimensions must be integral" );
 
-   return detail::Root<D, 2, X>( std::pow( x.m_value, X( 1.0 ) / 2 ) );
+   return detail::Root<D, 2, X>( ct_math::sqrt( x.m_value ) );
 }
 
 // Comparison operators
