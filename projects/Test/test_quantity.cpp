@@ -767,6 +767,12 @@ const lest::test units[] =
 
 int main()
 {
+    // CT Math
+    constexpr quantity<area_d> A = 17.64 * meter * meter;
+
+    static_assert( sqrt( A ) == quantity<length_d>( 4.2 * meter ), "CT Square Root failed!" );
+
+    // RT Math
     const int total = 0
     + lest::run( construction )
     + lest::run( arithmetic )
