@@ -32,6 +32,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <utility>  // std::declval
+#include "phys/units/ct_math/pow.hpp"
 
 /// namespace phys.
 
@@ -412,7 +413,7 @@ private:
     // powers and roots
 
     template <int N, typename D, typename X>
-    friend detail::Power<D, N, X>
+    friend constexpr detail::Power<D, N, X>
     nth_power( quantity<D, X> const & x );
 
     template <typename D, typename X>
@@ -609,10 +610,10 @@ constexpr quantity<D,X> abs( quantity<D,X> const & x )
 /// N-th power.
 
 template <int N, typename D, typename X>
-detail::Power<D, N, X>
+constexpr detail::Power<D, N, X>
 nth_power( quantity<D, X> const & x )
 {
-   return detail::Power<D, N, X>( std::pow( x.m_value, X( N ) ) );
+   return detail::Power<D, N, X>( ct_math::pow( x.m_value, X( N ) ) );
 }
 
 // Low powers defined separately for efficiency.
@@ -623,7 +624,7 @@ template <typename D, typename X>
 constexpr detail::Power<D, 2, X>
 square( quantity<D, X> const & x )
 {
-   return x * x;
+   return nth_power<2>( x );
 }
 
 /// cube.
@@ -632,7 +633,7 @@ template <typename D, typename X>
 constexpr detail::Power<D, 3, X>
 cube( quantity<D, X> const & x )
 {
-   return x * x * x;
+   return nth_power<3>( x );
 }
 
 // General root
