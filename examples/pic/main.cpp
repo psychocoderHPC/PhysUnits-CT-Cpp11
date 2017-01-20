@@ -204,6 +204,26 @@ make_binary( T_Op const = T_Op{} )
     return typename T_Op::Binary{};
 }
 
+namespace vec
+{
+
+
+template< typename T_Type, size_t T_size >
+struct vec;
+
+template< typename T >
+struct IsVector
+{
+    static constexpr bool value = false;
+};
+
+template< typename T, size_t T_Size >
+struct IsVector< vec<T, T_Size> >
+{
+    static constexpr bool value = true;
+};
+
+
 template<size_t T_size, typename F, typename T, size_t ... I1, template<typename,size_t> class T_Array>
 // Expansion pack
 constexpr auto
@@ -216,7 +236,11 @@ for_each2(const F& f,const T_Array<T, T_size>& a, seq<I1...>)
     return { f(a[I1])... };
 }
 
-template<size_t T_size, typename F, typename T, template<typename,size_t> class T_Array>
+template<size_t T_size, typename F, typename T, template<typename,size_t> class T_Array,
+    typename = typename std::enable_if<
+        IsVector<T_Array<T, T_size> >::value
+    >::type
+>
 // Initializer for the recursion
 constexpr auto
 for_each(const F& f, const T_Array<T, T_size>& a)
@@ -241,7 +265,11 @@ for_each2(const F& f,const T_Array<T1, T_size>& a, const T_Array<T2, T_size>& b,
     return { f(a[I], b[I])... };
 }
 
-template<size_t T_size, typename F, typename T1, typename T2, template<typename,size_t> class T_Array>
+template<size_t T_size, typename F, typename T1, typename T2, template<typename,size_t> class T_Array,
+    typename = typename std::enable_if<
+        IsVector<T_Array<T1, T_size> >::value && IsVector<T_Array<T2, T_size> >::value
+    >::type
+>
 // Initializer for the recursion
 constexpr auto
 for_each(const F& f, const T_Array<T1, T_size>& a, const T_Array<T2, T_size>& b)
@@ -253,27 +281,47 @@ for_each(const F& f, const T_Array<T1, T_size>& a, const T_Array<T2, T_size>& b)
     return for_each2(f, a, b, gen_seq<T_size>{});
 }
 
-
-
-
-
-template< typename T_Type, size_t T_size >
-struct vec;
-
-template< typename T >
-struct IsVector
+template< typename T, typename T2 >
+struct OperatorConflitc
 {
     static constexpr bool value = false;
 };
 
-template< typename T, size_t T_Size >
-struct IsVector< vec<T, T_Size> >
+template< typename T, typename T2, typename T_Type, size_t T_size >
+struct OperatorConflitc< quantity<T, T2>, vec<T_Type,T_size> >
 {
     static constexpr bool value = true;
 };
 
 
 
+template<typename T, typename T2>
+struct Vec
+{
+    constexpr vec<T,T2::size> operator()(const T& t) const
+    {
+        return vec<T,T2::size>{}.fill(t);
+    }
+};
+
+template<typename T, typename T2, size_t size>
+struct Vec< vec<T,size>, vec<T2,size> >
+{
+    constexpr vec<T,size> operator()(const vec<T,size>& v) const
+    {
+        return v;
+    }
+};
+
+template<typename T, typename T2, size_t size,size_t size2>
+struct Vec< vec<T,size>, vec<T2,size2> >
+{
+    constexpr vec<T,size> operator()(const vec<T,size>& v) const
+    {
+        static_assert(size==size2,"size need to be equal");
+        return v;
+    }
+};
 
 template< typename T_Type, size_t T_size >
 struct vec : public std::array< T_Type, T_size>
@@ -334,14 +382,12 @@ struct vec : public std::array< T_Type, T_size>
 
     template<
         typename T,
-        typename = typename std::enable_if< IsVector<T>::value >::type
+        typename T2,
+        size_t z
     >
-    constexpr auto
-    operator/( const T& rhs ) const
-    -> decltype( for_each( make_binary<Div>(), *this, rhs ) )
-    {
-        return for_each( make_binary<Div>(), *this, rhs );
-    }
+    friend constexpr auto
+    operator/( const T& t, const vec<T2,z>& rhs )
+    -> decltype( for_each( make_binary<Div>(), Vec<T, vec<T2,z> >{}(t), rhs ) );
 
     template< typename T >
     constexpr auto
@@ -369,14 +415,14 @@ struct vec : public std::array< T_Type, T_size>
 
     template<
         typename T,
-        typename = typename std::enable_if< IsVector<T>::value == false >::type
+        typename = typename std::enable_if< IsVector<T>::value == false && OperatorConflitc<T,vec>::value == false >::type
     >
     constexpr auto
     operator/( const T& rhs ) const
-    ->  decltype(for_each(  make_unary( Div{}, rhs ), *this ))
+    ->  decltype(for_each(  make_binary( Div{} ), *this, Vec<T, vec<type,size> >{}(rhs) ))
     {
        // static_assert(size!=size,"nononono");
-        return for_each(  make_unary( Div{}, rhs ), *this );
+        return for_each(  make_binary( Div{} ), *this, Vec<T, vec<type,size> >{}(rhs) );
     }
 
     template< typename T >
@@ -387,76 +433,26 @@ struct vec : public std::array< T_Type, T_size>
         return for_each(make_unary(Fill{},value), *this);
     }
 
-    template<
-        typename T,
-        typename T2,
-        size_t z,
-        typename = typename std::enable_if< IsVector<T>::value == false >::type
-    >
-    friend constexpr auto
-    operator/( const T& value, const vec<T2,z> v)
-    ->  decltype(
-             v.fill(value) / v
-    )
-    {
-        static_assert(size!=size,"nononono");
-        return
-           v.fill(value)/ v;
-    }
+
 
 };
 
-
-
-/*
-template<  typename T, size_t T_size  >
-constexpr auto
-operator/( const T& lhs, const vec< T, T_size >& v )
--> decltype( for_each( make_binary<Div>(),for_each(make_unary(Fill{},lhs), v),v))
-{
-    return for_each(make_unary(Fill{},lhs), v)/v;
-}
-*/
-#if 0
 template<
-    typename T1,
-    typename T2,
-    size_t T_size ,
-    typename = std::enable_if<
-        IsVector<T1>::isVector == false
-    >
->
-constexpr auto
-operator/( const T1 value, const vec< T2, T_size > v )
--> decltype(
-    (  IsVector<T1>::isVector == false) ? (for_each(make_unary(Fill{},value), v) ): 1
-)
-{
-    static_assert(v.size!=2,"nononono");
-    return v.fill(value) / v;
-}
-#endif
-/*
-template<
-    typename T1,
-    typename T2,
+    typename T_Left,
+    typename T_Right,
     size_t T_size
->
-constexpr auto
-operator/( const T1& value, const vec< T2, T_size >& v )
-->
-    decltype(
-        for_each(make_binary<Div>(),for_each(make_unary(Fill{},value)), v)
-    )
+>constexpr auto
+operator/( const T_Left& lhs, const vec<T_Right,T_size>& rhs )
+-> decltype( for_each( make_binary<Div>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs ) )
 {
-    static_assert(v.size!=2,"nononono");
-    return v.fill(value) / v;
+    return for_each( make_binary<Div>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs );
 }
-        */
+
+} //namepsace vec
 
 
 template<typename T, size_t T_size>
-std::ostream & operator<<(std::ostream &os, const vec<T,T_size> & v)
+std::ostream & operator<<(std::ostream &os, const vec::vec<T,T_size> & v)
     {
         os << "{";
         for(int i = 0; i < (T_size); i++)
@@ -488,31 +484,32 @@ int main()
     z *= Rep(12.0);
 
     constexpr auto mm = meter;
-    constexpr vec< decltype(meter),2 > v = {mm,2*mm};
-
+    constexpr vec::vec< decltype(meter),2 > v = {mm,2*mm};
+    constexpr vec::vec< decltype(meter),1 > vv = {2*mm};
     //constexpr vec< double,2 > v(23.f,42.);
 
 
     std::cout<<"v "<<v<<std::endl;
-    constexpr auto vpv = v/v;
+    constexpr auto vpv = v+v;
     std::cout<<"v+v "<<vpv<<std::endl;
-/*
+
     constexpr auto res=v;
     //static_assert(res[1]==2,"wrong v");
     constexpr auto res2 = res * res ;
     constexpr auto res4 = res / res ;
     constexpr auto res5 = res + res ;
     constexpr auto res6 = res - res*2 ;
-    constexpr auto res7 = res - 3 ;
-    constexpr auto res8 = res + 3 ;
-    constexpr auto res9 = res * 3 ;
-    constexpr auto res10 = res / 3  ;
-   // constexpr auto res11 = 40000 / res;
- * */
+    constexpr auto res7 = res - 3*meter ;
+    constexpr auto res8 = res + 3 *meter;
+    constexpr auto res9 = res * 3 * res ;
+    constexpr auto res10 =  3. * meter ;
+    constexpr auto res11 = res/res10;
 
 
 
-   // std::cout<<res2<<res4<<res5<<res6<<res7<<res8<<res9<<res10<<res10*res10<<res11<<std::endl;
+
+    std::cout<<res2<<res4<<res5<<res6<<res7<<res8<<res9<<res10<<" 10*10 "<<res10*res10<<std::endl;
+    std::cout<<1/meter<<std::endl;
    // std::cout<<"vec "<<v[1]<<" res2="<<res2[1]<<std::endl;
 
     //constexpr auto res3 = for_each(make_unary(Fill{},42), res2);
