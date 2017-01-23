@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <array>
 #include <chrono>
+#include <sys/socket.h>
 using namespace phys::units;
 using namespace phys::units::io;
 
@@ -210,6 +211,28 @@ namespace vec
 
 template< typename T_Type, size_t T_size >
 struct vec;
+}
+
+namespace phys
+{
+namespace units
+{
+
+template< typename T_Type, size_t T_size >
+struct DisableQuantityOperators< vec::vec< T_Type, T_size> >
+{
+    static constexpr bool value = true;
+};
+
+} //namespace units
+} //namepsace phys
+
+namespace vec
+{
+
+
+template< typename T_Type, size_t T_size >
+struct vec;
 
 template< typename T >
 struct IsVector
@@ -279,6 +302,35 @@ for_each(const F& f, const T_Array<T1, T_size>& a, const T_Array<T2, T_size>& b)
 >
 {
     return for_each2(f, a, b, gen_seq<T_size>{});
+}
+
+
+template<size_t T_size1, size_t T_size2, size_t ... I1, typename T1, size_t ... I2, typename T2, template<typename,size_t> class T_Array>
+// Expansion pack
+constexpr auto
+concat2(const T_Array<T1, T_size1>& a, const T_Array<T2, T_size2>& b, seq<I1...>, seq<I2...> )
+-> T_Array<
+    typename std::common_type< T1, T2 >::type,
+    T_size1 + T_size2
+>
+{
+    return { a[I1]..., b[I2]... };
+}
+
+template<size_t T_size1, size_t T_size2, typename T1, typename T2, template<typename,size_t> class T_Array,
+    typename = typename std::enable_if<
+        IsVector<T_Array<T1, T_size1> >::value && IsVector<T_Array<T2, T_size2> >::value
+    >::type
+>
+// Initializer for the recursion
+constexpr auto
+concat(const T_Array<T1, T_size1>& a, const T_Array<T2, T_size2>& b)
+-> T_Array<
+    typename std::common_type< T1, T2 >::type,
+    T_size1 + T_size2
+>
+{
+    return concat2(a, b, gen_seq<T_size1>{}, gen_seq<T_size2>{});
 }
 
 template< typename T, typename T2 >
@@ -415,7 +467,7 @@ struct vec : public std::array< T_Type, T_size>
 
     template<
         typename T,
-        typename = typename std::enable_if< IsVector<T>::value == false && OperatorConflitc<T,vec>::value == false >::type
+        typename = typename std::enable_if< !IsVector<T>::value >::type
     >
     constexpr auto
     operator/( const T& rhs ) const
@@ -483,9 +535,9 @@ int main()
     auto z = xyz *10;
     z *= Rep(12.0);
 
-    constexpr auto mm = meter;
-    constexpr vec::vec< decltype(meter),2 > v = {mm,2*mm};
-    constexpr vec::vec< decltype(meter),1 > vv = {2*mm};
+    constexpr auto m = meter;
+    constexpr vec::vec< decltype(meter),2 > v = {m,2*m};
+    constexpr vec::vec< decltype(meter),5 > vv = {2*m,m,m,m,m };
     //constexpr vec< double,2 > v(23.f,42.);
 
 
@@ -496,19 +548,27 @@ int main()
     constexpr auto res=v;
     //static_assert(res[1]==2,"wrong v");
     constexpr auto res2 = res * res ;
+    std::cout << "res2=" << res2 << std::endl;
     constexpr auto res4 = res / res ;
+    std::cout << "res4=" << res4 << std::endl;
     constexpr auto res5 = res + res ;
+    std::cout << "res5=" << res5 << std::endl;
     constexpr auto res6 = res - res*2 ;
+    std::cout << "res6=" << res6 << std::endl;
     constexpr auto res7 = res - 3*meter ;
+    std::cout << "res7=" << res7 << std::endl;
     constexpr auto res8 = res + 3 *meter;
+    std::cout << "res8=" << res8 << std::endl;
     constexpr auto res9 = res * 3 * res ;
+    std::cout << "res9=" << res9 << std::endl;
     constexpr auto res10 =  3. * meter ;
-    constexpr auto res11 = res/res10;
+    std::cout << "res10=" << res10 << std::endl;
+    constexpr auto res11 = res/ res10;
+    std::cout << "res11=" << res11 << std::endl;
+    constexpr auto res12 = concat( res, vv );
+    std::cout << "res12=" << res12 << std::endl;
 
 
-
-
-    std::cout<<res2<<res4<<res5<<res6<<res7<<res8<<res9<<res10<<" 10*10 "<<res10*res10<<std::endl;
     std::cout<<1/meter<<std::endl;
    // std::cout<<"vec "<<v[1]<<" res2="<<res2[1]<<std::endl;
 

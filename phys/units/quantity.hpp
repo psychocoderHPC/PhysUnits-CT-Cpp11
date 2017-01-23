@@ -267,6 +267,25 @@ constexpr struct magnitude_tag_t{} magnitude_tag{};
 
 } // namespace detail
 
+template< typename T >
+struct DisableQuantityOperators
+{
+    static constexpr bool value = false;
+};
+
+template< typename T >
+struct IsQuantity
+{
+    static constexpr bool value = false;
+};
+
+template< typename Dims, typename T >
+struct IsQuantity< quantity< Dims, T > >
+{
+    static constexpr bool value = true;
+};
+
+
 /**
  * \brief class "quantity" is the heart of the library. It associates
  * dimensions  with a single "Rep" data member and protects it from
@@ -331,7 +350,20 @@ public:
      */
     static constexpr quantity zero() { return quantity{ value_type( 0.0 ) }; }
 //    static constexpr quantity zero = quantity{ value_type( 0.0 ) };
-
+/*
+    template <
+        typename Y,
+        typename = typename std::enable_if<
+            !DisableQuantityOperators<Y>::value &&
+            !IsQuantity< Y >::value
+        >::type
+    >
+    constexpr quantity<dimension_type, detail::PromoteMul<value_type,Y>>
+    operator/( const Y & y ) const
+    {
+        return quantity<dimension_type, detail::PromoteMul<value_type,Y>>( m_value / y );
+    }
+*/
 private:
     /**
      * private initializing constructor.
@@ -393,15 +425,15 @@ private:
     template< typename D, typename X, typename Y>
     friend constexpr quantity<D, X> &
     operator/=( quantity<D, X> & x, const Y & y );
-
-    template <typename D, typename X, typename Y>
+/*
+    template <typename D, typename X, typename Y, typename SFINAE>
     friend constexpr quantity<D, detail::PromoteMul<X,Y>>
     operator/( quantity<D, X> const & x, const Y & y );
 
-    template <typename D, typename X, typename Y>
+    template <typename D, typename X, typename Y, typename SFINAE>
     friend constexpr detail::Reciprocal<D, X, Y>
     operator/( const X & x, quantity<D, Y> const & y );
-
+*/
     template <typename DX, typename DY, typename X, typename Y>
     friend constexpr detail::Quotient<DX, DY, X, Y>
     operator/( quantity<DX, X> const & x, quantity< DY, Y > const & y );
@@ -574,20 +606,33 @@ operator/=( quantity<D, X> & x, const Y & y )
 
 /// quan / num
 
-template <typename D, typename X, typename Y>
+template <
+    typename D,
+    typename X,
+    typename Y,
+    typename = typename std::enable_if<
+        !DisableQuantityOperators<Y>::value
+    >::type
+>
 constexpr quantity<D, detail::PromoteMul<X,Y>>
 operator/( quantity<D, X> const & x, const Y & y )
 {
-   return quantity<D, detail::PromoteMul<X,Y>>( x.m_value / y );
+   return quantity<D, detail::PromoteMul<X,Y>>( detail::magnitude_tag, x.magnitude() / y );
 }
 
 /// num / quan
 
-template <typename D, typename X, typename Y>
+template <typename D,
+    typename X,
+    typename Y,
+    typename = typename std::enable_if<
+        !DisableQuantityOperators<X>::value
+    >::type
+>
 constexpr detail::Reciprocal<D, X, Y>
 operator/( const X & x, quantity<D, Y> const & y )
 {
-   return detail::Reciprocal<D, X, Y>( x / y.m_value );
+   return detail::Reciprocal<D, X, Y>( detail::magnitude_tag, x / y.magnitude() );
 }
 
 /// quan / quan:
