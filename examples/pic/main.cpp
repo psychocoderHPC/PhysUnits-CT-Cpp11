@@ -191,11 +191,35 @@ struct Fill
     };
 };
 
+struct Echo
+{
+
+    struct Unary
+    {
+        constexpr Unary( )
+        {
+        }
+
+        template< typename T >
+        constexpr T operator()( T& value) const
+        {
+            return value;
+        }
+    };
+};
+
 template< typename T_Op, typename T>
 constexpr typename T_Op::template Unary<T>
 make_unary( T_Op const, T const value )
 {
     return typename T_Op::template Unary<T>{value};
+}
+
+template< typename T_Op>
+constexpr typename T_Op::Unary
+make_unary( T_Op const )
+{
+    return typename T_Op::Unary{};
 }
 
 template< typename T_Op >
@@ -219,7 +243,7 @@ namespace units
 {
 
 template< typename T_Type, size_t T_size >
-struct DisableQuantityOperators< vec::vec< T_Type, T_size> >
+struct disableQuantityOperatorsFor< vec::vec< T_Type, T_size> >
 {
     static constexpr bool value = true;
 };
@@ -395,74 +419,37 @@ struct vec : public std::array< T_Type, T_size>
 
     }
 
-
-    template< typename T >
-    constexpr auto
-    operator+( const vec< T, size >& rhs ) const
-    -> decltype( for_each( make_binary<Add>(), *this, rhs ) )
-    {
-        return for_each( make_binary<Add>(), *this, rhs );
-    }
-
-    template< typename T >
-    constexpr auto
-    operator-( const vec< T, size >& rhs ) const
-    -> decltype( for_each( make_binary<Sub>(), *this, rhs ) )
-    {
-        return for_each( make_binary<Sub>(), *this, rhs );
-    }
-
-    template< typename T>
-    constexpr auto
-    operator*( const vec< T, size >& rhs ) const
-    -> decltype( for_each( make_binary<Mul>(), *this, rhs ) )
-    {
-        return for_each( make_binary<Mul>(), *this, rhs );
-    }
-
-    /*
     template<
-        typename T
+        typename T,
+        typename = typename std::enable_if< !IsVector<T>::value >::type
     >
-    constexpr
-    typename enableVecOpReturnType<self, T>::type
-    operator/( const T& rhs ) const
+    constexpr auto
+    operator-( const T& rhs ) const
+    ->  decltype(for_each(  make_binary( Sub{} ), *this, Vec<T, vec<type,size> >{}(rhs) ))
     {
-        return for_each( make_binary<Div>(), *this, rhs );
+        return for_each(  make_binary( Sub{} ), *this, Vec<T, vec<type,size> >{}(rhs) );
     }
-    */
 
     template<
         typename T,
-        typename T2,
-        size_t z
+        typename = typename std::enable_if< !IsVector<T>::value >::type
     >
-    friend constexpr auto
-    operator/( const T& t, const vec<T2,z>& rhs )
-    -> decltype( for_each( make_binary<Div>(), Vec<T, vec<T2,z> >{}(t), rhs ) );
-
-    template< typename T >
-    constexpr auto
-    operator-( const T& rhs ) const
-    -> decltype( for_each( make_unary( Sub{}, rhs ), *this ) )
-    {
-        return for_each(  make_unary( Sub{}, rhs ), *this );
-    }
-
-    template< typename T >
     constexpr auto
     operator+( const T& rhs ) const
-    -> decltype( for_each( make_unary( Add{}, rhs ), *this ) )
+    ->  decltype(for_each(  make_binary( Add{} ), *this, Vec<T, vec<type,size> >{}(rhs) ))
     {
-        return for_each(  make_unary( Add{}, rhs ), *this );
+        return for_each(  make_binary( Add{} ), *this, Vec<T, vec<type,size> >{}(rhs) );
     }
 
-    template< typename T >
+    template<
+        typename T,
+        typename = typename std::enable_if< !IsVector<T>::value >::type
+    >
     constexpr auto
     operator*( const T& rhs ) const
-    -> decltype( for_each( make_unary( Mul{}, rhs ), *this ) )
+    ->  decltype(for_each(  make_binary( Mul{} ), *this, Vec<T, vec<type,size> >{}(rhs) ))
     {
-        return for_each(  make_unary( Mul{}, rhs ), *this );
+        return for_each(  make_binary( Mul{} ), *this, Vec<T, vec<type,size> >{}(rhs) );
     }
 
     template<
@@ -473,7 +460,6 @@ struct vec : public std::array< T_Type, T_size>
     operator/( const T& rhs ) const
     ->  decltype(for_each(  make_binary( Div{} ), *this, Vec<T, vec<type,size> >{}(rhs) ))
     {
-       // static_assert(size!=size,"nononono");
         return for_each(  make_binary( Div{} ), *this, Vec<T, vec<type,size> >{}(rhs) );
     }
 
@@ -484,8 +470,6 @@ struct vec : public std::array< T_Type, T_size>
     {
         return for_each(make_unary(Fill{},value), *this);
     }
-
-
 
 };
 
@@ -498,6 +482,100 @@ operator/( const T_Left& lhs, const vec<T_Right,T_size>& rhs )
 -> decltype( for_each( make_binary<Div>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs ) )
 {
     return for_each( make_binary<Div>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs );
+}
+
+template<
+    typename T_Left,
+    typename T_Right,
+    size_t T_size
+>constexpr auto
+operator*( const T_Left& lhs, const vec<T_Right,T_size>& rhs )
+-> decltype( for_each( make_binary<Mul>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs ) )
+{
+    return for_each( make_binary<Mul>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs );
+}
+
+template<
+    typename T_Left,
+    typename T_Right,
+    size_t T_size
+>constexpr auto
+operator+( const T_Left& lhs, const vec<T_Right,T_size>& rhs )
+-> decltype( for_each( make_binary<Add>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs ) )
+{
+    return for_each( make_binary<Add>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs );
+}
+
+template<
+    typename T_Left,
+    typename T_Right,
+    size_t T_size
+>constexpr auto
+operator-( const T_Left& lhs, const vec<T_Right,T_size>& rhs )
+-> decltype( for_each( make_binary<Sub>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs ) )
+{
+    return for_each( make_binary<Sub>(), Vec<T_Left,vec<T_Right,T_size>>{}(lhs), rhs );
+}
+
+
+template< typename T, typename... T1 >
+constexpr auto
+make_vec( const T& value, const T1&... values )
+-> vec<T, sizeof...(T1) + 1>
+{
+    return vec<T, sizeof...(T1) + 1>{value, values...};
+}
+
+
+namespace detail
+{
+    template< typename T, typename I>
+    constexpr T always( const T& value, const I )
+    {
+        return value;
+    }
+
+    template<typename T, size_t ... I1>
+    // Expansion pack
+    constexpr auto
+    make_vec( const T& value, seq<I1...>)
+    -> vec<T, sizeof...(I1)>
+    {
+        return { always(value,I1)... };
+    }
+
+
+    // Initializer for the recursion
+    template<typename T, size_t T_sizeOld, size_t ... I1>
+    constexpr auto
+    shrink(const vec<T, T_sizeOld>& v, seq<I1...>)
+    -> vec<
+        T,
+        sizeof...(I1)
+    >
+    {
+        return { v[I1]... };
+    }
+
+} // namespace detail
+template< size_t T_size, typename T>
+constexpr auto
+make_vec( const T& value )
+-> vec<T, T_size>
+{
+    return  detail::make_vec(value,gen_seq<T_size>{} );
+}
+
+// Initializer for the recursion
+template<size_t T_Size, typename T, size_t T_sizeOld>
+constexpr auto
+shrink(const vec<T, T_sizeOld>& v)
+-> vec<
+    T,
+    T_Size
+>
+{
+    return detail::shrink( v, gen_seq<T_Size>{});
 }
 
 } //namepsace vec
@@ -567,7 +645,24 @@ int main()
     std::cout << "res11=" << res11 << std::endl;
     constexpr auto res12 = concat( res, vv );
     std::cout << "res12=" << res12 << std::endl;
+    constexpr auto res13 = res12 * meter;
+    std::cout << "res13=" << res13 << std::endl;
+    constexpr auto res14 = res13 + meter*meter;
+    std::cout << "res14=" << res14 << std::endl;
+    constexpr auto res15 = meter*meter + res13;
+    std::cout << "res15=" << res15 << std::endl;
+    constexpr auto res16 = res15 * res15;
+    std::cout << "res16=" << res16 << std::endl;
+    constexpr auto res17 = vec::make_vec(3*meter, 42*meter);
+    std::cout << "res17=" << res17 << std::endl;
+    constexpr auto res18 = vec::make_vec<11>(42*meter);
+    std::cout << "res18=" << res18 << std::endl;
+    constexpr auto res19 = vec::shrink<5>(res18);
+    std::cout << "res19=" << res19 << std::endl;
 
+    constexpr auto xxx1 = vec::make_vec<11>(meter*3);
+    constexpr auto xxx2 = xxx1/(2 *meter);
+    std::cout<<"xxx2 = "<< concat(vec::shrink<2>(xxx2),xxx2)<<std::endl;
 
     std::cout<<1/meter<<std::endl;
    // std::cout<<"vec "<<v[1]<<" res2="<<res2[1]<<std::endl;
