@@ -270,34 +270,38 @@ struct IsVector< vec<T, T_Size> >
     static constexpr bool value = true;
 };
 
+template< size_t min, size_t elem >
+struct Accumulate;
 
-template< size_t elem >
+template< size_t min >
+struct Accumulate< min, min >
+{
+    template<size_t T_size, typename F, typename T, template<typename,size_t> class T_Array>
+    // Expansion pack
+    constexpr auto
+    operator()(const F& f,const T_Array<T, T_size>& a) const
+    -> decltype( a[ min ] )
+    {
+        return a[ min ];
+    }
+};
+
+
+template< size_t min, size_t elem >
 struct Accumulate
 {
+    //static_assert( min == 0, "accumulate with zero size array is not allowed!" );
+    static constexpr size_t diff = (elem-min +1) / 2;
     template<size_t T_size, typename F, typename T, template<typename,size_t> class T_Array>
     // Expansion pack
     constexpr auto
     operator()(const F& f,const T_Array<T, T_size>& a) const
-    -> decltype( f( a[ elem ], Accumulate< elem - 1>{}( f, a ) ) )
+    -> decltype( f( Accumulate< min, min + diff - 1 >{}( f, a ), Accumulate<  min + diff, min  + ( elem-min )  >{}( f, a ) ) )
     {
-        return f( a[ elem ], Accumulate< elem - 1>{}( f, a ) );
+       // static_assert(diff == 1,"nonono");
+        return f( Accumulate< min, min + diff - 1 >{}( f, a ), Accumulate<  min + diff, min  + (elem-min) >{}( f, a ) );
     }
 };
-
-template< >
-struct Accumulate<0>
-{
-    template<size_t T_size, typename F, typename T, template<typename,size_t> class T_Array>
-    // Expansion pack
-    constexpr auto
-    operator()(const F& f,const T_Array<T, T_size>& a) const
-    -> decltype( a[ 0 ] )
-    {
-        return a[ 0 ];
-    }
-};
-
-
 
 template<size_t T_size, typename F, typename T, template<typename,size_t> class T_Array,
     typename = typename std::enable_if<
@@ -306,9 +310,10 @@ template<size_t T_size, typename F, typename T, template<typename,size_t> class 
 >
 constexpr auto
 accumulate(const F& f, const T_Array<T, T_size>& a)
--> decltype( Accumulate<T_size - 1>{}(f, a) )
+-> decltype( Accumulate<0, T_size -1 >{}(f, a) )
 {
-    return Accumulate<T_size - 1>{}(f, a);
+    static_assert( T_size > 0, "accumulate with zero size array is not allowed!" );
+    return Accumulate<0, T_size - 1>{}(f, a);
 }
 
 
@@ -705,10 +710,11 @@ int main()
     constexpr auto xxx2 = xxx1/(2 *meter);
     std::cout<<"xxx2 = "<< xxx2<<std::endl;
 
-    constexpr auto xxx3 = accumulate( make_binary<Add>(), xxx2 );
-    std::cout<<"xxx3 = "<< xxx3 <<std::endl;
+    /*constexpr auto xxx3 = accumulate( make_binary<Add>(), xxx2 );
+    std::cout<<"xxx3 = "<< xxx3 <<std::endl;*/
 
-    constexpr auto xxx4 = accumulate( make_binary<Mul>(), res19 );
+    constexpr auto c3 =  vec::make_vec<128>(2*meter);;
+    constexpr auto xxx4 = accumulate( make_binary<Mul>(), c3 );
     std::cout<<"xxx4 = "<< xxx4 <<std::endl;
 
     std::cout<<1/meter<<std::endl;
