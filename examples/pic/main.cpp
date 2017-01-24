@@ -271,6 +271,47 @@ struct IsVector< vec<T, T_Size> >
 };
 
 
+template< size_t elem >
+struct Accumulate
+{
+    template<size_t T_size, typename F, typename T, template<typename,size_t> class T_Array>
+    // Expansion pack
+    constexpr auto
+    operator()(const F& f,const T_Array<T, T_size>& a) const
+    -> decltype( f( a[ elem ], Accumulate< elem - 1>{}( f, a ) ) )
+    {
+        return f( a[ elem ], Accumulate< elem - 1>{}( f, a ) );
+    }
+};
+
+template< >
+struct Accumulate<0>
+{
+    template<size_t T_size, typename F, typename T, template<typename,size_t> class T_Array>
+    // Expansion pack
+    constexpr auto
+    operator()(const F& f,const T_Array<T, T_size>& a) const
+    -> decltype( a[ 0 ] )
+    {
+        return a[ 0 ];
+    }
+};
+
+
+
+template<size_t T_size, typename F, typename T, template<typename,size_t> class T_Array,
+    typename = typename std::enable_if<
+        IsVector<T_Array<T, T_size> >::value
+    >::type
+>
+constexpr auto
+accumulate(const F& f, const T_Array<T, T_size>& a)
+-> decltype( Accumulate<T_size - 1>{}(f, a) )
+{
+    return Accumulate<T_size - 1>{}(f, a);
+}
+
+
 template<size_t T_size, typename F, typename T, size_t ... I1, template<typename,size_t> class T_Array>
 // Expansion pack
 constexpr auto
@@ -662,7 +703,13 @@ int main()
 
     constexpr auto xxx1 = vec::make_vec<11>(meter*3);
     constexpr auto xxx2 = xxx1/(2 *meter);
-    std::cout<<"xxx2 = "<< concat(vec::shrink<2>(xxx2),xxx2)<<std::endl;
+    std::cout<<"xxx2 = "<< xxx2<<std::endl;
+
+    constexpr auto xxx3 = accumulate( make_binary<Add>(), xxx2 );
+    std::cout<<"xxx3 = "<< xxx3 <<std::endl;
+
+    constexpr auto xxx4 = accumulate( make_binary<Mul>(), res19 );
+    std::cout<<"xxx4 = "<< xxx4 <<std::endl;
 
     std::cout<<1/meter<<std::endl;
    // std::cout<<"vec "<<v[1]<<" res2="<<res2[1]<<std::endl;
