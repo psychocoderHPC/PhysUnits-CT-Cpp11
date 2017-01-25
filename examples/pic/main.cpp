@@ -33,7 +33,7 @@ make_quantity( T const  arg )
 
 }
 */
-
+/*
 template<size_t... Is> struct seq{};
 
 template<size_t N, size_t... Is>
@@ -41,6 +41,46 @@ struct gen_seq : gen_seq<N-1, N-1, Is...>{};
 
 template<size_t... Is>
 struct gen_seq<0, Is...> : seq<Is...>{};
+*/
+
+template<size_t... Is> struct seq{};
+
+template<typename T1, typename T2> struct join_seq;
+
+template<size_t... Is1, size_t... Is2>
+struct join_seq< seq<Is1...>, seq<Is2...> >
+{
+    typedef seq<Is1...,Is2...> type;
+};
+
+
+template<size_t F, size_t E>
+struct rec_gen_seq;
+
+template<size_t F>
+struct rec_gen_seq< F, F >
+{
+    typedef seq<F> type;
+};
+
+template<size_t F, size_t E>
+struct rec_gen_seq
+{
+    static constexpr size_t diff = (E - F + 1 ) / 2;
+    typedef typename join_seq<
+        typename rec_gen_seq< F, F + diff - 1 >::type,
+        typename rec_gen_seq< F + diff, F + ( E - F ) >::type
+    >::type type;
+};
+
+
+template<size_t N>
+struct gen_seq : rec_gen_seq<0, N-1>::type {};
+
+template<>
+struct gen_seq<0> : seq<>{};
+
+
 
 
 
@@ -713,7 +753,7 @@ int main()
     /*constexpr auto xxx3 = accumulate( make_binary<Add>(), xxx2 );
     std::cout<<"xxx3 = "<< xxx3 <<std::endl;*/
 
-    constexpr auto c3 =  vec::make_vec<128>(2*meter);;
+    constexpr auto c3 =  vec::make_vec<100>(2*meter);;
     constexpr auto xxx4 = accumulate( make_binary<Mul>(), c3 );
     std::cout<<"xxx4 = "<< xxx4 <<std::endl;
 
