@@ -74,11 +74,25 @@ struct rec_gen_seq
 };
 
 
-template<size_t N>
-struct gen_seq : rec_gen_seq<0, N-1>::type {};
+template<size_t F, size_t N = 0>
+struct gen_seq :
+    rec_gen_seq<
+        N<=F ? N : F,
+        N<=F ? F - 1 : N -1
+    >::type
+{};
+
+template<size_t F>
+struct gen_seq<F,F> :
+    rec_gen_seq<
+        F,
+        F
+    >::type
+{};
+
 
 template<>
-struct gen_seq<0> : seq<>{};
+struct gen_seq<0,0> : seq<>{};
 
 
 
@@ -231,7 +245,7 @@ struct Fill
     };
 };
 
-struct Echo
+struct Identity
 {
 
     struct Unary
@@ -360,10 +374,10 @@ accumulate(const F& f, const T_Array<T, T_size>& a)
 template<size_t T_size, typename F, typename T, size_t ... I1, template<typename,size_t> class T_Array>
 // Expansion pack
 constexpr auto
-for_each2(const F& f,const T_Array<T, T_size>& a, seq<I1...>)
+for_each(const F& f,const T_Array<T, T_size>& a, seq<I1...>)
 -> T_Array<
     decltype( f( a[0] ) ),
-    T_size
+    sizeof...(I1)
 >
 {
     return { f(a[I1])... };
@@ -382,17 +396,17 @@ for_each(const F& f, const T_Array<T, T_size>& a)
     T_size
 >
 {
-    return for_each2(f, a, gen_seq<T_size>{});
+    return for_each(f, a, gen_seq<T_size>{});
 }
 
 
-template<size_t T_size, typename F, size_t ... I, typename T1, typename T2, template<typename,size_t> class T_Array>
+template<size_t T_size, size_t T_size2, typename F, size_t ... I, typename T1, typename T2, template<typename,size_t> class T_Array>
 // Expansion pack
 constexpr auto
-for_each2(const F& f,const T_Array<T1, T_size>& a, const T_Array<T2, T_size>& b, seq<I...>)
+for_each(const F& f,const T_Array<T1, T_size>& a, const T_Array<T2, T_size2>& b, seq<I...>)
 -> T_Array<
     decltype( f( a[0], b[0] ) ),
-    T_size
+    sizeof...(I)
 >
 {
     return { f(a[I], b[I])... };
@@ -411,7 +425,7 @@ for_each(const F& f, const T_Array<T1, T_size>& a, const T_Array<T2, T_size>& b)
     T_size
 >
 {
-    return for_each2(f, a, b, gen_seq<T_size>{});
+    return for_each(f, a, b, gen_seq<T_size>{});
 }
 
 
@@ -631,18 +645,6 @@ namespace detail
     }
 
 
-    // Initializer for the recursion
-    template<typename T, size_t T_sizeOld, size_t ... I1>
-    constexpr auto
-    shrink(const vec<T, T_sizeOld>& v, seq<I1...>)
-    -> vec<
-        T,
-        sizeof...(I1)
-    >
-    {
-        return { v[I1]... };
-    }
-
 } // namespace detail
 template< size_t T_size, typename T>
 constexpr auto
@@ -653,15 +655,21 @@ make_vec( const T& value )
 }
 
 // Initializer for the recursion
+template<typename T_Seq, typename T, size_t T_sizeOld>
+constexpr auto
+select(const T_Seq s, const vec<T, T_sizeOld>& v)
+-> decltype( for_each( make_unary( Identity{} ), v, s  ) )
+{
+    return for_each( make_unary( Identity{} ), v, s  );
+}
+
+// Initializer for the recursion
 template<size_t T_Size, typename T, size_t T_sizeOld>
 constexpr auto
 shrink(const vec<T, T_sizeOld>& v)
--> vec<
-    T,
-    T_Size
->
+-> decltype( select(gen_seq<T_Size>{}, v) )
 {
-    return detail::shrink( v, gen_seq<T_Size>{});
+    return select(gen_seq<T_Size>{}, v);
 }
 
 } //namepsace vec
@@ -685,6 +693,16 @@ struct Test
     static constexpr auto mySpeed  = 1.2 * meter /second;
 
 };
+
+#include <boost/mpl/assert.hpp>
+
+/*
+template<size_t... T>
+void abc( seq<T...> a)
+{
+   BOOST_MPL_ASSERT_MSG(1==2, vvvvv, (seq<T...>));
+
+}*/
 
 
 int main()
@@ -753,11 +771,19 @@ int main()
     /*constexpr auto xxx3 = accumulate( make_binary<Add>(), xxx2 );
     std::cout<<"xxx3 = "<< xxx3 <<std::endl;*/
 
-    constexpr auto c3 =  vec::make_vec<100>(2*meter);;
+    constexpr auto c3 =  vec::make_vec<2>(2*meter);
     constexpr auto xxx4 = accumulate( make_binary<Mul>(), c3 );
     std::cout<<"xxx4 = "<< xxx4 <<std::endl;
 
+    //abc(gen_seq<2,6>{});
+    constexpr auto d1 =  vec::make_vec(2*meter, 3*meter, 4*meter);
+    constexpr auto d2 =  vec::make_vec(2*meter, 3*meter, 4*meter, 5*meter);
+    constexpr auto d3 = vec::select(seq<0,3>{},d2);  //for_each(  make_binary( Mul{} ), d1, d2, seq<0,2>{}  );
+    std::cout<<d1<<" + "<<d2<<" = "<< d3 <<std::endl;
+
     std::cout<<1/meter<<std::endl;
+
+
    // std::cout<<"vec "<<v[1]<<" res2="<<res2[1]<<std::endl;
 
     //constexpr auto res3 = for_each(make_unary(Fill{},42), res2);
